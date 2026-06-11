@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Claude Code specific files
+CLAUDE.md
+CLAUDE.json
+CLAUDE.code-workspace
+CLAUDE.code-workspace.json
+CLAUDE.code-workspace.json.lock
