@@ -53,7 +53,7 @@ export function FenwickControls() {
       <div className="space-y-2">
         <label className="text-xs font-medium text-[#a78bde] uppercase tracking-[0.06em]">Update(i, delta)</label>
         <p className="text-xs text-[#6b4d8a]">Add delta to arr[i] (1-indexed)</p>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-col gap-2">
           <input
             type="number" min={1} max={n}
             value={updateIdx}
@@ -61,7 +61,7 @@ export function FenwickControls() {
             onKeyDown={e => e.key === 'Enter' && !isAnimating && doUpdate()}
             placeholder="i"
             disabled={isAnimating}
-            className={cn(inputClass, 'min-w-[80px] flex-1')}
+            className={cn(inputClass, 'w-full')}
           />
           <input
             type="number"
@@ -70,9 +70,9 @@ export function FenwickControls() {
             onKeyDown={e => e.key === 'Enter' && !isAnimating && doUpdate()}
             placeholder="Δ"
             disabled={isAnimating}
-            className={cn(inputClass, 'min-w-[80px] flex-1')}
+            className={cn(inputClass, 'w-full')}
           />
-          <Btn onClick={doUpdate} disabled={isAnimating || !updateIdx.trim() || !updateDelta.trim()} variant="active" full={false}>
+          <Btn onClick={doUpdate} disabled={isAnimating || !updateIdx.trim() || !updateDelta.trim()} variant="active">
             Update
           </Btn>
         </div>
