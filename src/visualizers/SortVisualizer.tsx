@@ -31,10 +31,12 @@ interface Props {
 }
 
 export function SortVisualizer({ bars, description }: Props) {
+  const n = bars.length
   const maxVal = Math.max(...bars.map(b => b.value), 1)
-  const showLabels = bars.length <= 64
-  const thinBorder = bars.length > 128
-  const smallFont = bars.length > 32
+  const showValueLabels = n <= 64
+  const showIndexLabels = n <= 20
+  const thinBorder = n > 128
+  const valueFontSize = `${Math.max(8, 12 - n / 10)}px`
 
   return (
     <div className="flex flex-col gap-4">
@@ -45,10 +47,10 @@ export function SortVisualizer({ bars, description }: Props) {
             const barH = Math.max(4, Math.round((bar.value / maxVal) * BAR_MAX_H))
             return (
               <div key={i} className="flex flex-col items-center flex-1 min-w-0">
-                {showLabels && (
+                {showValueLabels && (
                   <span
                     className="font-mono truncate leading-none mb-[2px]"
-                    style={{ fontSize: smallFont ? '6px' : '9px', color: LABEL[bar.highlight] }}
+                    style={{ fontSize: valueFontSize, color: LABEL[bar.highlight] }}
                   >
                     {bar.value}
                   </span>
@@ -68,13 +70,15 @@ export function SortVisualizer({ bars, description }: Props) {
         </div>
 
         {/* Index labels */}
-        <div className="flex gap-[3px] mt-[3px]">
-          {bars.map((_, i) => (
-            <div key={i} className="flex-1 flex justify-center">
-              <span className="font-mono text-[#3d2d5a]" style={{ fontSize: '7px' }}>{i}</span>
-            </div>
-          ))}
-        </div>
+        {showIndexLabels && (
+          <div className="flex gap-[3px] mt-[3px]">
+            {bars.map((_, i) => (
+              <div key={i} className="flex-1 flex justify-center">
+                <span className="font-mono text-[#3d2d5a]" style={{ fontSize: '10px' }}>{i}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Step description */}
