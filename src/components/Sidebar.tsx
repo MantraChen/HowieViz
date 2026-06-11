@@ -16,6 +16,12 @@ const NAV_ITEMS: NavItem[] = [
     category: 'linear',
     description: 'LIFO structure with push/pop/peek/clear',
   },
+  {
+    label: 'Queue',
+    path: '/visualizer/queue',
+    category: 'linear',
+    description: 'FIFO structure with enqueue/dequeue/peek/clear',
+  },
 ]
 
 const CATEGORY_ICONS = {
@@ -96,7 +102,7 @@ export function Sidebar() {
 
         <div className="pt-2">
           <p className={cn(sectionLabel, 'px-3 mb-1.5')}>Coming Soon</p>
-          {['Queue', 'Linked List', 'BST', 'Binary Heap', 'Graph BFS/DFS', 'Quicksort', 'Merge Sort'].map(
+          {['Linked List', 'BST', 'Binary Heap', 'Graph BFS/DFS', 'Quicksort', 'Merge Sort'].map(
             (name) => (
               <div key={name} className="flex items-center px-3 py-2 text-sm text-[#3d2d5a] cursor-not-allowed">
                 {name}

@@ -9,6 +9,7 @@ const CATEGORIES = [
     items: [
       { label: 'Array', path: '/visualizer/array', ready: true },
       { label: 'Stack', path: '/visualizer/stack', ready: true },
+      { label: 'Queue', path: '/visualizer/queue', ready: true },
     ],
   },
   {
