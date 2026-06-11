@@ -7,10 +7,11 @@ const CATEGORIES = [
     title: 'Linear Structures',
     description: 'Arrays, stacks, queues, and linked lists with step-by-step operation animations.',
     items: [
-      { label: 'Array', path: '/visualizer/array', ready: true },
-      { label: 'Stack', path: '/visualizer/stack', ready: true },
-      { label: 'Queue', path: '/visualizer/queue', ready: true },
-      { label: 'Linked List', path: '/visualizer/linked-list', ready: true },
+      { label: 'Array',              path: '/visualizer/array',              ready: true },
+      { label: 'Stack',              path: '/visualizer/stack',              ready: true },
+      { label: 'Queue',              path: '/visualizer/queue',              ready: true },
+      { label: 'Linked List',        path: '/visualizer/linked-list',        ready: true },
+      { label: 'Doubly Linked List', path: '/visualizer/doubly-linked-list', ready: true },
     ],
   },
   {
@@ -18,12 +19,12 @@ const CATEGORIES = [
     title: 'Trees',
     description: 'Binary search trees, heaps, tries, and range trees. Visualize traversals and queries.',
     items: [
-      { label: 'Binary Search Tree', path: '/visualizer/bst', ready: true },
-      { label: 'Binary Heap', path: '/visualizer/binary-heap', ready: true },
-      { label: 'Trie', path: '/visualizer/trie', ready: true },
-      { label: 'Segment Tree', path: '/visualizer/segment-tree', ready: true },
+      { label: 'Binary Search Tree', path: '/visualizer/bst',          ready: true },
+      { label: 'AVL Tree',           path: '/visualizer/avl-tree',     ready: true },
+      { label: 'Binary Heap',        path: '/visualizer/binary-heap',  ready: true },
+      { label: 'Trie',               path: '/visualizer/trie',         ready: true },
+      { label: 'Segment Tree',       path: '/visualizer/segment-tree', ready: true },
       { label: 'Fenwick Tree / BIT', path: '/visualizer/fenwick-tree', ready: true },
-      { label: 'AVL Tree', path: '#', ready: false },
     ],
   },
   {
@@ -31,9 +32,9 @@ const CATEGORIES = [
     title: 'Graphs',
     description: 'BFS, DFS, shortest paths, and disjoint sets on interactive graph canvases.',
     items: [
-      { label: 'BFS / DFS', path: '/visualizer/graph', ready: true },
-      { label: "Dijkstra's", path: '/visualizer/dijkstra', ready: true },
-      { label: 'Union Find / DSU', path: '/visualizer/union-find', ready: true },
+      { label: 'BFS / DFS',         path: '/visualizer/graph',       ready: true },
+      { label: "Dijkstra's",         path: '/visualizer/dijkstra',    ready: true },
+      { label: 'Union Find / DSU',   path: '/visualizer/union-find',  ready: true },
     ],
   },
   {
@@ -41,16 +42,20 @@ const CATEGORIES = [
     title: 'Sorting',
     description: 'Watch every comparison and swap in classic sorting algorithms.',
     items: [
-      { label: 'Quicksort', path: '/visualizer/quicksort', ready: true },
-      { label: 'Merge Sort', path: '/visualizer/merge-sort', ready: true },
-      { label: 'Heap Sort', path: '#', ready: false },
+      { label: 'Quicksort',      path: '/visualizer/quicksort',      ready: true },
+      { label: 'Merge Sort',     path: '/visualizer/merge-sort',     ready: true },
+      { label: 'Heap Sort',      path: '/visualizer/heap-sort',      ready: true },
+      { label: 'Bubble Sort',    path: '/visualizer/bubble-sort',    ready: true },
+      { label: 'Insertion Sort', path: '/visualizer/insertion-sort', ready: true },
     ],
   },
   {
     icon: Search,
     title: 'Searching',
     description: 'Binary search and advanced search techniques visualized.',
-    items: [{ label: 'Binary Search', path: '#', ready: false }],
+    items: [
+      { label: 'Binary Search', path: '/visualizer/binary-search', ready: true },
+    ],
   },
 ]
 
@@ -78,28 +83,17 @@ export function HomePage() {
             </div>
             <p className="text-[#6b4d8a] text-xs leading-relaxed mb-4">{description}</p>
             <ul className="space-y-1">
-              {items.map((item) =>
-                item.ready ? (
-                  <li key={item.label}>
-                    <Link
-                      to={item.path}
-                      className="flex items-center justify-between px-3 py-2 rounded-md bg-[#744cae]/10 hover:bg-[#9b6fd4]/20 text-[#b892e8] hover:text-[#e1d2e9] text-sm transition-all duration-200 group border border-[#744cae]/20 hover:border-[#9b6fd4]/40"
-                    >
-                      <span>{item.label}</span>
-                      <ChevronRight size={14} className="opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                    </Link>
-                  </li>
-                ) : (
-                  <li key={item.label}>
-                    <div className="flex items-center justify-between px-3 py-2 rounded-md text-[#3d2d5a] text-sm cursor-not-allowed">
-                      <span>{item.label}</span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-[#1e1630] text-[#3d2d5a] border border-[#2a1f3d]">
-                        Soon
-                      </span>
-                    </div>
-                  </li>
-                ),
-              )}
+              {items.map(item => (
+                <li key={item.label}>
+                  <Link
+                    to={item.path}
+                    className="flex items-center justify-between px-3 py-2 rounded-md bg-[#744cae]/10 hover:bg-[#9b6fd4]/20 text-[#b892e8] hover:text-[#e1d2e9] text-sm transition-all duration-200 group border border-[#744cae]/20 hover:border-[#9b6fd4]/40"
+                  >
+                    <span>{item.label}</span>
+                    <ChevronRight size={14} className="opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
