@@ -16,20 +16,24 @@ const CATEGORIES = [
   {
     icon: GitBranch,
     title: 'Trees',
-    description: 'Binary search trees, heaps, and balanced trees. Visualize rotations and traversals.',
+    description: 'Binary search trees, heaps, tries, and range trees. Visualize traversals and queries.',
     items: [
       { label: 'Binary Search Tree', path: '/visualizer/bst', ready: true },
       { label: 'Binary Heap', path: '/visualizer/binary-heap', ready: true },
+      { label: 'Trie', path: '/visualizer/trie', ready: true },
+      { label: 'Segment Tree', path: '/visualizer/segment-tree', ready: true },
+      { label: 'Fenwick Tree / BIT', path: '/visualizer/fenwick-tree', ready: true },
       { label: 'AVL Tree', path: '#', ready: false },
     ],
   },
   {
     icon: Network,
     title: 'Graphs',
-    description: 'BFS, DFS, Dijkstra, and more on interactive graph canvases.',
+    description: 'BFS, DFS, shortest paths, and disjoint sets on interactive graph canvases.',
     items: [
       { label: 'BFS / DFS', path: '/visualizer/graph', ready: true },
-      { label: "Dijkstra's", path: '#', ready: false },
+      { label: "Dijkstra's", path: '/visualizer/dijkstra', ready: true },
+      { label: 'Union Find / DSU', path: '/visualizer/union-find', ready: true },
     ],
   },
   {

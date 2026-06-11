@@ -10,6 +10,11 @@ import { BSTPage } from '@/pages/BSTPage'
 import { GraphPage } from '@/pages/GraphPage'
 import { QuicksortPage } from '@/pages/QuicksortPage'
 import { MergeSortPage } from '@/pages/MergeSortPage'
+import { DijkstraPage } from '@/pages/DijkstraPage'
+import { UnionFindPage } from '@/pages/UnionFindPage'
+import { TriePage } from '@/pages/TriePage'
+import { SegmentTreePage } from '@/pages/SegmentTreePage'
+import { FenwickPage } from '@/pages/FenwickPage'
 
 export default function App() {
   return (
@@ -25,6 +30,11 @@ export default function App() {
         <Route path="visualizer/graph" element={<GraphPage />} />
         <Route path="visualizer/quicksort" element={<QuicksortPage />} />
         <Route path="visualizer/merge-sort" element={<MergeSortPage />} />
+        <Route path="visualizer/dijkstra" element={<DijkstraPage />} />
+        <Route path="visualizer/union-find" element={<UnionFindPage />} />
+        <Route path="visualizer/trie" element={<TriePage />} />
+        <Route path="visualizer/segment-tree" element={<SegmentTreePage />} />
+        <Route path="visualizer/fenwick-tree" element={<FenwickPage />} />
       </Route>
     </Routes>
   )

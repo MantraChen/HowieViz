@@ -47,6 +47,36 @@ const NAV_ITEMS: NavItem[] = [
     description: 'BFS and DFS traversal on an interactive undirected graph',
   },
   {
+    label: "Dijkstra's",
+    path: '/visualizer/dijkstra',
+    category: 'graph',
+    description: 'Shortest path on a weighted directed graph',
+  },
+  {
+    label: 'Union Find',
+    path: '/visualizer/union-find',
+    category: 'graph',
+    description: 'Disjoint set union with path compression and union by rank',
+  },
+  {
+    label: 'Trie',
+    path: '/visualizer/trie',
+    category: 'tree',
+    description: 'Prefix tree with insert, search, and delete',
+  },
+  {
+    label: 'Segment Tree',
+    path: '/visualizer/segment-tree',
+    category: 'tree',
+    description: 'Range sum queries and point updates in O(log n)',
+  },
+  {
+    label: 'Fenwick Tree',
+    path: '/visualizer/fenwick-tree',
+    category: 'tree',
+    description: 'Binary indexed tree for prefix sums and updates',
+  },
+  {
     label: 'Quicksort',
     path: '/visualizer/quicksort',
     category: 'sorting',
@@ -138,7 +168,7 @@ export function Sidebar() {
 
         <div className="pt-2">
           <p className={cn(sectionLabel, 'px-3 mb-1.5')}>Coming Soon</p>
-          {['Heap Sort', 'Binary Search'].map((name) => (
+          {['Heap Sort', 'Binary Search', 'AVL Tree'].map((name) => (
             <div key={name} className="flex items-center px-3 py-2 text-sm text-[#3d2d5a] cursor-not-allowed">
               {name}
             </div>
