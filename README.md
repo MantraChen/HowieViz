@@ -11,8 +11,8 @@ Interactive data structure & algorithm visualizer for competitive programmers.
 - [x] Binary Search Tree
 - [x] Binary Heap
 - [x] Graph BFS/DFS
-- [ ] Quicksort
-- [ ] Merge Sort
+- [x] Quicksort
+- [x] Merge Sort
 
 ## Getting Started
 
