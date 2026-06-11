@@ -5,12 +5,12 @@ Interactive data structure & algorithm visualizer for competitive programmers.
 ## Visualizers
 
 - [x] Array
-- [ ] Stack
-- [ ] Queue
-- [ ] Linked List
-- [ ] Binary Search Tree
-- [ ] Binary Heap
-- [ ] Graph BFS/DFS
+- [x] Stack
+- [x] Queue
+- [x] Linked List
+- [x] Binary Search Tree
+- [x] Binary Heap
+- [x] Graph BFS/DFS
 - [ ] Quicksort
 - [ ] Merge Sort
 

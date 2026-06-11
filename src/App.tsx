@@ -7,6 +7,7 @@ import { QueuePage } from '@/pages/QueuePage'
 import { LinkedListPage } from '@/pages/LinkedListPage'
 import { HeapPage } from '@/pages/HeapPage'
 import { BSTPage } from '@/pages/BSTPage'
+import { GraphPage } from '@/pages/GraphPage'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="visualizer/linked-list" element={<LinkedListPage />} />
         <Route path="visualizer/binary-heap" element={<HeapPage />} />
         <Route path="visualizer/bst" element={<BSTPage />} />
+        <Route path="visualizer/graph" element={<GraphPage />} />
       </Route>
     </Routes>
   )

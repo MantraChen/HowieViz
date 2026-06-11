@@ -28,7 +28,7 @@ const CATEGORIES = [
     title: 'Graphs',
     description: 'BFS, DFS, Dijkstra, and more on interactive graph canvases.',
     items: [
-      { label: 'BFS / DFS', path: '#', ready: false },
+      { label: 'BFS / DFS', path: '/visualizer/graph', ready: true },
       { label: "Dijkstra's", path: '#', ready: false },
     ],
   },
