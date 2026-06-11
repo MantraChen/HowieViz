@@ -8,6 +8,8 @@ import { LinkedListPage } from '@/pages/LinkedListPage'
 import { HeapPage } from '@/pages/HeapPage'
 import { BSTPage } from '@/pages/BSTPage'
 import { GraphPage } from '@/pages/GraphPage'
+import { QuicksortPage } from '@/pages/QuicksortPage'
+import { MergeSortPage } from '@/pages/MergeSortPage'
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
         <Route path="visualizer/binary-heap" element={<HeapPage />} />
         <Route path="visualizer/bst" element={<BSTPage />} />
         <Route path="visualizer/graph" element={<GraphPage />} />
+        <Route path="visualizer/quicksort" element={<QuicksortPage />} />
+        <Route path="visualizer/merge-sort" element={<MergeSortPage />} />
       </Route>
     </Routes>
   )

@@ -46,6 +46,18 @@ const NAV_ITEMS: NavItem[] = [
     category: 'graph',
     description: 'BFS and DFS traversal on an interactive undirected graph',
   },
+  {
+    label: 'Quicksort',
+    path: '/visualizer/quicksort',
+    category: 'sorting',
+    description: 'In-place divide and conquer with pivot partitioning',
+  },
+  {
+    label: 'Merge Sort',
+    path: '/visualizer/merge-sort',
+    category: 'sorting',
+    description: 'Stable divide and conquer — split, sort, merge',
+  },
 ]
 
 const CATEGORY_ICONS = {
@@ -126,7 +138,7 @@ export function Sidebar() {
 
         <div className="pt-2">
           <p className={cn(sectionLabel, 'px-3 mb-1.5')}>Coming Soon</p>
-          {['Quicksort', 'Merge Sort'].map((name) => (
+          {['Heap Sort', 'Binary Search'].map((name) => (
             <div key={name} className="flex items-center px-3 py-2 text-sm text-[#3d2d5a] cursor-not-allowed">
               {name}
             </div>

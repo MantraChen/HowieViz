@@ -37,8 +37,8 @@ const CATEGORIES = [
     title: 'Sorting',
     description: 'Watch every comparison and swap in classic sorting algorithms.',
     items: [
-      { label: 'Quicksort', path: '#', ready: false },
-      { label: 'Merge Sort', path: '#', ready: false },
+      { label: 'Quicksort', path: '/visualizer/quicksort', ready: true },
+      { label: 'Merge Sort', path: '/visualizer/merge-sort', ready: true },
       { label: 'Heap Sort', path: '#', ready: false },
     ],
   },
