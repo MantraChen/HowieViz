@@ -9,12 +9,12 @@ export function QueueControls() {
   const hasValidValue = !isNaN(parsedValue)
 
   const inputClass =
-    'w-full px-3 py-2 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors'
+    'w-full h-10 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors'
 
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-xs text-[#a78bde]">Value</label>
+        <label className="text-sm text-[#a78bde]">Value</label>
         <input
           type="number"
           value={inputValue}
@@ -40,14 +40,14 @@ export function QueueControls() {
       </div>
 
       <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <span className="text-xs text-[#6b4d8a]">Speed:</span>
           {(['slow', 'normal', 'fast'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setSpeed(s)}
               className={cn(
-                'text-xs px-2 py-1 rounded capitalize transition-all duration-200',
+                'text-xs w-14 h-7 rounded capitalize transition-all duration-200 text-center',
                 speed === s
                   ? 'bg-[#744cae] text-white font-medium shadow-[0_0_12px_rgba(180,130,232,0.4)]'
                   : 'text-[#6b4d8a] hover:text-[#a78bde]',
@@ -87,7 +87,7 @@ function ActionButton({ onClick, disabled, variant, children }: ActionButtonProp
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'px-3 py-2 rounded-md border text-sm font-medium transition-all duration-200',
+        'h-10 px-4 w-full flex items-center justify-center rounded-md border text-sm font-medium text-center transition-all duration-200',
         styles[variant],
         disabled && 'opacity-30 cursor-not-allowed pointer-events-none',
       )}

@@ -1,27 +1,28 @@
-import { QueueVisualizer } from '@/visualizers/QueueVisualizer'
-import { QueueControls } from '@/components/QueueControls'
+import { HeapVisualizer } from '@/visualizers/HeapVisualizer'
+import { HeapControls } from '@/components/HeapControls'
 
 const COMPLEXITY_ROWS = [
-  { op: 'Enqueue', time: 'O(1)' },
-  { op: 'Dequeue', time: 'O(1)' },
-  { op: 'Peek',    time: 'O(1)' },
-  { op: 'Search',  time: 'O(n)' },
+  { op: 'Insert',      time: 'O(log n)' },
+  { op: 'Extract Min', time: 'O(log n)' },
+  { op: 'Peek',        time: 'O(1)'     },
+  { op: 'Build Heap',  time: 'O(n)'     },
+  { op: 'Search',      time: 'O(n)'     },
 ]
 
 function complexityClass(time: string): string {
-  if (time.startsWith('O(1)'))   return 'text-[#d4a8ff] font-bold'
-  if (time.startsWith('O(log)')) return 'text-[#b892e8] font-semibold'
-  return 'text-[#a78bde] font-medium'
+  if (time === 'O(1)')  return 'text-[#d4a8ff] font-bold'
+  if (time === 'O(n)')  return 'text-[#a78bde] font-medium'
+  return 'text-[#b892e8] font-semibold'
 }
 
-export function QueuePage() {
+export function HeapPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#f0eaf8]">Queue</h1>
+        <h1 className="text-3xl font-bold text-[#f0eaf8]">Binary Heap (Min-Heap)</h1>
         <p className="text-sm text-[#a78bde] mt-1">
-          A first-in, first-out (FIFO) structure. Elements enqueue at the rear and dequeue from the front.
-          Visualize enqueue, dequeue, peek, and clear with live animations.
+          A complete binary tree where each parent is smaller than its children.
+          Watch insert bubble-up and extract-min bubble-down animations step by step.
         </p>
       </div>
 
@@ -29,14 +30,14 @@ export function QueuePage() {
         <div className="lg:col-span-2 space-y-4">
           <div className="rounded-xl border border-[#2a1f3d] bg-[#0f0b17] p-5">
             <h2 className="text-sm font-semibold mb-4 text-[#e1d2e9] tracking-wide">Visualization</h2>
-            <QueueVisualizer />
+            <HeapVisualizer />
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-xl border border-[#2a1f3d] bg-[#0f0b17] p-5">
             <h2 className="text-sm font-semibold mb-4 text-[#e1d2e9] tracking-wide">Controls</h2>
-            <QueueControls />
+            <HeapControls />
           </div>
 
           <div className="rounded-xl border border-[#2a1f3d] bg-[#0f0b17] p-5">

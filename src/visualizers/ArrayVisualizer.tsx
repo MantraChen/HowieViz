@@ -38,7 +38,7 @@ export function ArrayVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex items-end gap-2 min-h-[120px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
+        <div className="flex items-end justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm m-auto">Array is empty</span>
           )}
@@ -94,7 +94,7 @@ function Legend() {
     <div className="flex items-center gap-4 flex-wrap">
       {(Object.keys(HIGHLIGHT_STYLES) as NonNullable<ArrayElement['highlight']>[]).map((key) => (
         <div key={key} className="flex items-center gap-1.5">
-          <div className={`w-3 h-3 rounded border-2 ${HIGHLIGHT_STYLES[key]}`} />
+          <div className={`w-2.5 h-2.5 rounded-full border-2 ${HIGHLIGHT_STYLES[key]}`} />
           <span className="text-xs text-[#6b4d8a]">{LEGEND_LABELS[key]}</span>
         </div>
       ))}
