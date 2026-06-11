@@ -22,12 +22,14 @@ export function LinkedListControls() {
     reset,
   } = useLinkedListStore()
 
+  const MAX_SIZE = 32
   const parsedValue = parseInt(inputValue, 10)
   const parsedIndex = parseInt(inputIndex, 10)
   const hasValidValue = !isNaN(parsedValue)
   const hasValidInsertIndex = !isNaN(parsedIndex) && parsedIndex >= 0 && parsedIndex <= nodes.length
   const hasValidDeleteIndex = !isNaN(parsedIndex) && parsedIndex >= 0 && parsedIndex < nodes.length
   const isEmpty = nodes.length === 0
+  const isFull = nodes.length >= MAX_SIZE
 
   const inputClass =
     'w-full h-10 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors disabled:opacity-40'
@@ -63,22 +65,22 @@ export function LinkedListControls() {
         <p className="text-xs tracking-widest text-[#744cae] uppercase mb-2 mt-4">Insert</p>
         <div className="grid grid-cols-3 gap-2">
           <ActionButton
-            onClick={() => hasValidValue && !isSearching && insertHead(parsedValue)}
-            disabled={!hasValidValue || isSearching}
+            onClick={() => hasValidValue && !isSearching && !isFull && insertHead(parsedValue)}
+            disabled={!hasValidValue || isSearching || isFull}
             variant="primary"
           >
             Head
           </ActionButton>
           <ActionButton
-            onClick={() => hasValidValue && !isSearching && insertTail(parsedValue)}
-            disabled={!hasValidValue || isSearching}
+            onClick={() => hasValidValue && !isSearching && !isFull && insertTail(parsedValue)}
+            disabled={!hasValidValue || isSearching || isFull}
             variant="primary"
           >
             Tail
           </ActionButton>
           <ActionButton
-            onClick={() => hasValidValue && hasValidInsertIndex && !isSearching && insertAt(parsedIndex, parsedValue)}
-            disabled={!hasValidValue || !hasValidInsertIndex || isSearching}
+            onClick={() => hasValidValue && hasValidInsertIndex && !isSearching && !isFull && insertAt(parsedIndex, parsedValue)}
+            disabled={!hasValidValue || !hasValidInsertIndex || isSearching || isFull}
             variant="primary"
           >
             At Index
@@ -112,6 +114,10 @@ export function LinkedListControls() {
           </ActionButton>
         </div>
       </div>
+
+      {isFull && (
+        <p className="text-[10px] text-[#ff6b8a] font-mono">max size ({MAX_SIZE}) reached</p>
+      )}
 
       {isSearching ? (
         <ActionButton onClick={cancelSearch} disabled={false} variant="active">

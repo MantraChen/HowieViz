@@ -28,7 +28,7 @@ export function SortControls({
         <input
           type="range"
           min={5}
-          max={20}
+          max={256}
           value={arraySize}
           onChange={e => !isAnimating && onSetArraySize(Number(e.target.value))}
           disabled={isAnimating}
@@ -36,7 +36,7 @@ export function SortControls({
         />
         <div className="flex justify-between">
           <span className="text-[10px] text-[#3d2d5a] font-mono">5</span>
-          <span className="text-[10px] text-[#3d2d5a] font-mono">20</span>
+          <span className="text-[10px] text-[#3d2d5a] font-mono">256</span>
         </div>
       </div>
 

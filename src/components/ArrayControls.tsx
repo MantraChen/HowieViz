@@ -17,10 +17,12 @@ export function ArrayControls() {
     reset,
   } = useArrayStore()
 
+  const MAX_SIZE = 64
   const parsedValue = parseInt(inputValue, 10)
   const parsedIndex = parseInt(inputIndex, 10)
   const hasValidValue = !isNaN(parsedValue)
   const hasValidIndex = !isNaN(parsedIndex) && parsedIndex >= 0 && parsedIndex < elements.length
+  const isFull = elements.length >= MAX_SIZE
 
   const inputClass =
     'w-full h-10 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors'
@@ -53,12 +55,12 @@ export function ArrayControls() {
       <div>
         <p className="text-xs tracking-widest text-[#744cae] uppercase mb-2 mt-4">Insert</p>
         <div className="grid grid-cols-2 gap-2">
-          <ActionButton onClick={() => hasValidValue && push(parsedValue)} disabled={!hasValidValue} variant="primary">
+          <ActionButton onClick={() => hasValidValue && !isFull && push(parsedValue)} disabled={!hasValidValue || isFull} variant="primary">
             Push
           </ActionButton>
           <ActionButton
-            onClick={() => hasValidValue && insert(isNaN(parsedIndex) ? elements.length : parsedIndex, parsedValue)}
-            disabled={!hasValidValue}
+            onClick={() => hasValidValue && !isFull && insert(isNaN(parsedIndex) ? elements.length : parsedIndex, parsedValue)}
+            disabled={!hasValidValue || isFull}
             variant="success"
           >
             Insert at Index
@@ -77,6 +79,10 @@ export function ArrayControls() {
           </ActionButton>
         </div>
       </div>
+
+      {isFull && (
+        <p className="text-[10px] text-[#ff6b8a] font-mono">max size ({MAX_SIZE}) reached</p>
+      )}
 
       <ActionButton onClick={reset} disabled={false} variant="neutral">
         Reset

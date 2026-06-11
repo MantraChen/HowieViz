@@ -18,7 +18,7 @@ const SPEED_DELAY: Record<AnimationSpeed, number> = {
   fast: 130,
 }
 
-const MAX_SIZE = 15
+const MAX_SIZE = 64
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
 let animGen = 0

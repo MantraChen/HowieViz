@@ -41,11 +41,14 @@ export function StackVisualizer() {
 
   // Reverse so top of stack renders at top of screen
   const displayed = [...elements].reverse()
+  const compact = elements.length > 32
+  const boxSize = compact ? 36 : 48
+  const boxFont = compact ? '11px' : '14px'
 
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex flex-col items-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710]">
+        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] max-h-[480px] overflow-y-auto">
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm m-auto">Stack is empty</span>
           )}
@@ -79,7 +82,8 @@ export function StackVisualizer() {
                             : { scale: 1 }
                     }
                     transition={{ duration: 0.4 }}
-                    className={`w-12 h-12 flex items-center justify-center rounded-lg border-2 font-mono font-semibold text-sm transition-colors duration-300 ${HIGHLIGHT_STYLES[el.highlight ?? 'default']}`}
+                    className={`flex items-center justify-center rounded-lg border-2 font-mono font-semibold transition-colors duration-300 ${HIGHLIGHT_STYLES[el.highlight ?? 'default']}`}
+                    style={{ width: boxSize, height: boxSize, fontSize: boxFont }}
                   >
                     {el.value}
                   </motion.div>

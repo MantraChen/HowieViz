@@ -34,6 +34,7 @@ interface UFStore {
   setUnionX: (v: string) => void
   setUnionY: (v: string) => void
   setFindX: (v: string) => void
+  setN: (n: number) => void
   union: (x: number, y: number) => void
   find: (x: number) => void
   reset: () => void
@@ -88,6 +89,11 @@ export const useUFStore = create<UFStore>((set, get) => ({
   setUnionX: v => set({ unionX: v }),
   setUnionY: v => set({ unionY: v }),
   setFindX: v => set({ findX: v }),
+
+  setN: (n: number) => {
+    cancelAnim()
+    set({ n, ...makeInitialState(n), message: '', isAnimating: false, unionX: '', unionY: '', findX: '' })
+  },
 
   union: (x: number, y: number) => {
     cancelAnim()
@@ -208,6 +214,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
 
   reset: () => {
     cancelAnim()
-    set({ ...makeInitialState(DEFAULT_N), message: '', isAnimating: false })
+    const { n } = get()
+    set({ ...makeInitialState(n), message: '', isAnimating: false })
   },
 }))

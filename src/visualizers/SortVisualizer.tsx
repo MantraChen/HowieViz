@@ -32,25 +32,29 @@ interface Props {
 
 export function SortVisualizer({ bars, description }: Props) {
   const maxVal = Math.max(...bars.map(b => b.value), 1)
-  const smallFont = bars.length > 14
+  const showLabels = bars.length <= 64
+  const thinBorder = bars.length > 128
+  const smallFont = bars.length > 32
 
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] px-3 pt-3 pb-1">
         {/* Bars */}
-        <div className="flex items-end gap-[3px]" style={{ height: `${BAR_MAX_H + 22}px`, overflow: 'hidden' }}>
+        <div className="flex items-end gap-[2px]" style={{ height: `${BAR_MAX_H + 22}px`, overflow: 'hidden' }}>
           {bars.map((bar, i) => {
-            const barH = Math.max(8, Math.round((bar.value / maxVal) * BAR_MAX_H))
+            const barH = Math.max(4, Math.round((bar.value / maxVal) * BAR_MAX_H))
             return (
               <div key={i} className="flex flex-col items-center flex-1 min-w-0">
-                <span
-                  className="font-mono truncate leading-none mb-[3px]"
-                  style={{ fontSize: smallFont ? '7px' : '9px', color: LABEL[bar.highlight] }}
-                >
-                  {bar.value}
-                </span>
+                {showLabels && (
+                  <span
+                    className="font-mono truncate leading-none mb-[2px]"
+                    style={{ fontSize: smallFont ? '6px' : '9px', color: LABEL[bar.highlight] }}
+                  >
+                    {bar.value}
+                  </span>
+                )}
                 <motion.div
-                  className="w-full rounded-t-[2px] border-[1.5px]"
+                  className={`w-full rounded-t-[1px] ${thinBorder ? 'border-[0.5px]' : 'border-[1.5px]'}`}
                   animate={{
                     height: `${barH}px`,
                     backgroundColor: FILL[bar.highlight],

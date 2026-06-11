@@ -36,10 +36,16 @@ export function ArrayVisualizer() {
     }
   }, [elements, clearHighlights])
 
+  const n = elements.length
+  const boxSize = n > 48 ? 24 : n > 32 ? 32 : 48
+  const fontSize = boxSize < 32 ? '10px' : boxSize < 48 ? '12px' : '14px'
+  const showIndex = n <= 32
+  const wrapElements = n > 16
+
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex items-center justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
+        <div className={`flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] ${wrapElements ? 'flex-wrap' : 'overflow-x-auto'}`}>
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm">Array is empty</span>
           )}
@@ -52,7 +58,7 @@ export function ArrayVisualizer() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.5, y: -20 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                className="flex flex-col items-center gap-1 flex-shrink-0"
               >
                 <motion.div
                   animate={
@@ -63,11 +69,12 @@ export function ArrayVisualizer() {
                         : { scale: 1 }
                   }
                   transition={{ duration: 0.4 }}
-                  className={`w-12 h-12 flex items-center justify-center rounded-lg border-2 font-mono font-semibold text-sm transition-colors duration-300 ${HIGHLIGHT_STYLES[el.highlight ?? 'default']}`}
+                  className={`flex items-center justify-center rounded-lg border-2 font-mono font-semibold transition-colors duration-300 ${HIGHLIGHT_STYLES[el.highlight ?? 'default']}`}
+                  style={{ width: boxSize, height: boxSize, fontSize }}
                 >
                   {el.value}
                 </motion.div>
-                <span className="text-[10px] text-[#6b4d8a] font-mono">{idx}</span>
+                {showIndex && <span className="text-[10px] text-[#6b4d8a] font-mono">{idx}</span>}
               </motion.div>
             ))}
           </AnimatePresence>

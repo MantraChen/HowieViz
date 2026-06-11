@@ -39,13 +39,19 @@ export function QueueVisualizer() {
     return () => clearTimeout(timer)
   }, [elements, clearHighlights])
 
+  const n = elements.length
+  const boxSize = n > 48 ? 24 : n > 32 ? 32 : 48
+  const fontSize = boxSize < 32 ? '10px' : boxSize < 48 ? '12px' : '14px'
+  const showIndex = n <= 32
+  const wrapElements = n > 16
+
   const isFront = (idx: number) => idx === 0
   const isRear = (idx: number) => idx === elements.length - 1
 
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex items-center justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
+        <div className={`flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] ${wrapElements ? 'flex-wrap' : 'overflow-x-auto'}`}>
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm">Queue is empty</span>
           )}
@@ -63,20 +69,22 @@ export function QueueVisualizer() {
                   damping: 28,
                   delay: el.highlight === 'deleted' ? idx * 0.05 : 0,
                 }}
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                className="flex flex-col items-center gap-1 flex-shrink-0"
               >
-                <div className="flex items-center gap-1 h-5">
-                  {isFront(idx) && (
-                    <span className="text-[10px] font-bold text-[#c9a0ff] uppercase tracking-wider bg-[#c9a0ff]/10 px-1.5 py-0.5 rounded">
-                      FRONT
-                    </span>
-                  )}
-                  {isRear(idx) && (
-                    <span className="text-[10px] font-bold text-[#9b6fd4] uppercase tracking-wider bg-[#9b6fd4]/10 px-1.5 py-0.5 rounded">
-                      REAR
-                    </span>
-                  )}
-                </div>
+                {!wrapElements && (
+                  <div className="flex items-center gap-1 h-5">
+                    {isFront(idx) && (
+                      <span className="text-[10px] font-bold text-[#c9a0ff] uppercase tracking-wider bg-[#c9a0ff]/10 px-1.5 py-0.5 rounded">
+                        FRONT
+                      </span>
+                    )}
+                    {isRear(idx) && (
+                      <span className="text-[10px] font-bold text-[#9b6fd4] uppercase tracking-wider bg-[#9b6fd4]/10 px-1.5 py-0.5 rounded">
+                        REAR
+                      </span>
+                    )}
+                  </div>
+                )}
                 <motion.div
                   animate={
                     el.highlight === 'inserted'
@@ -88,11 +96,12 @@ export function QueueVisualizer() {
                           : { scale: 1 }
                   }
                   transition={{ duration: 0.4 }}
-                  className={`w-12 h-12 flex items-center justify-center rounded-lg border-2 font-mono font-semibold text-sm transition-colors duration-300 ${HIGHLIGHT_STYLES[el.highlight ?? 'default']}`}
+                  className={`flex items-center justify-center rounded-lg border-2 font-mono font-semibold transition-colors duration-300 ${HIGHLIGHT_STYLES[el.highlight ?? 'default']}`}
+                  style={{ width: boxSize, height: boxSize, fontSize }}
                 >
                   {el.value}
                 </motion.div>
-                <span className="text-[10px] text-[#6b4d8a] font-mono">{idx}</span>
+                {showIndex && <span className="text-[10px] text-[#6b4d8a] font-mono">{idx}</span>}
               </motion.div>
             ))}
           </AnimatePresence>

@@ -22,7 +22,7 @@ export function HeapControls() {
   const parsed = parseInt(inputValue, 10)
   const hasValue = !isNaN(parsed)
   const isEmpty = heap.length === 0
-  const isFull = heap.length >= 15
+  const isFull = heap.length >= 64
 
   const inputClass =
     'w-full h-10 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors disabled:opacity-40'
@@ -76,7 +76,7 @@ export function HeapControls() {
       </div>
 
       {isFull && (
-        <p className="text-[10px] text-[#ff6b8a] font-mono">max size (15) reached</p>
+        <p className="text-[10px] text-[#ff6b8a] font-mono">max size (64) reached</p>
       )}
 
       <div>

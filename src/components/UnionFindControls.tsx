@@ -6,7 +6,7 @@ export function UnionFindControls() {
     n, isAnimating,
     unionX, unionY, findX,
     setUnionX, setUnionY, setFindX,
-    union, find, reset,
+    setN, union, find, reset,
   } = useUFStore()
 
   const inputClass =
@@ -25,6 +25,29 @@ export function UnionFindControls() {
 
   return (
     <div className="space-y-5">
+      {/* Node count */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-sm text-[#a78bde]">Nodes</label>
+          <span className="text-sm font-mono text-[#c9a0ff] font-semibold">{n}</span>
+        </div>
+        <input
+          type="range"
+          min={2}
+          max={16}
+          value={n}
+          onChange={e => !isAnimating && setN(Number(e.target.value))}
+          disabled={isAnimating}
+          className="w-full h-1.5 rounded-full appearance-none bg-[#2a1f3d] accent-[#744cae] disabled:opacity-40 cursor-pointer"
+        />
+        <div className="flex justify-between">
+          <span className="text-[10px] text-[#3d2d5a] font-mono">2</span>
+          <span className="text-[10px] text-[#3d2d5a] font-mono">16</span>
+        </div>
+      </div>
+
+      <div className="border-t border-[#2a1f3d]" />
+
       {/* Union */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-[#a78bde] uppercase tracking-[0.06em]">Union(x, y)</label>

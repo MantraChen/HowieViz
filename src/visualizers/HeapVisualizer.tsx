@@ -3,7 +3,6 @@ import { useHeapStore, type HeapNode } from '@/store/heapStore'
 import { useState, useEffect } from 'react'
 
 const SVG_WIDTH = 560
-const SVG_HEIGHT = 340
 const NODE_RADIUS = 22
 const LEVEL_HEIGHT = 74
 const TOP_PADDING = 24
@@ -52,6 +51,8 @@ export function HeapVisualizer() {
   }, [heap.length])
 
   const positions = heap.map((_, i) => getNodePos(i))
+  const maxLevel = heap.length > 0 ? Math.floor(Math.log2(heap.length)) : 0
+  const svgHeight = Math.max(200, (maxLevel + 1) * LEVEL_HEIGHT + NODE_RADIUS * 2 + TOP_PADDING + 20)
 
   return (
     <div className="flex flex-col gap-5">
@@ -63,7 +64,7 @@ export function HeapVisualizer() {
           </div>
         ) : (
           <svg
-            viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+            viewBox={`0 0 ${SVG_WIDTH} ${svgHeight}`}
             width="100%"
             style={{ display: 'block' }}
           >
