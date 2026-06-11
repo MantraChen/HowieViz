@@ -1,5 +1,3 @@
-Replace README.md with a clean, minimal version:
-
 # HowieViz
 
 Interactive data structure & algorithm visualizer for competitive programmers.
