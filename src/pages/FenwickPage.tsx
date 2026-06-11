@@ -7,6 +7,12 @@ const COMPLEXITY_ROWS = [
   { op: 'Build', time: 'O(n log n)' },
 ]
 
+function complexityClass(time: string): string {
+  if (time.startsWith('O(1)')) return 'text-[#d4a8ff] font-bold'
+  if (time.includes('log'))    return 'text-[#b892e8] font-semibold'
+  return 'text-[#a78bde] font-medium'
+}
+
 export function FenwickPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -46,7 +52,7 @@ export function FenwickPage() {
                 {COMPLEXITY_ROWS.map(({ op, time }) => (
                   <tr key={op} className="border-b border-[#1e1630] last:border-0">
                     <td className="py-2 text-[#e1d2e9]">{op}</td>
-                    <td className="py-2 text-right font-mono text-[#b892e8] font-semibold">{time}</td>
+                    <td className={`py-2 text-right font-mono ${complexityClass(time)}`}>{time}</td>
                   </tr>
                 ))}
               </tbody>

@@ -3,10 +3,10 @@ import { cn } from '@/lib/utils'
 
 export function UnionFindControls() {
   const {
-    n, isAnimating,
+    n, isAnimating, speed,
     unionX, unionY, findX,
     setUnionX, setUnionY, setFindX,
-    setN, union, find, reset,
+    setN, setSpeed, union, find, reset,
   } = useUFStore()
 
   const inputClass =
@@ -103,6 +103,24 @@ export function UnionFindControls() {
       <Btn onClick={() => !isAnimating && reset()} disabled={isAnimating} variant="neutral">
         Reset
       </Btn>
+
+      <div className="flex items-center gap-2 pt-1">
+        <span className="text-xs text-[#6b4d8a]">Speed:</span>
+        {(['slow', 'normal', 'fast'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setSpeed(s)}
+            className={cn(
+              'text-xs w-14 h-7 rounded capitalize transition-all duration-200 text-center',
+              speed === s
+                ? 'bg-[#744cae] text-white font-medium shadow-[0_0_12px_rgba(180,130,232,0.4)]'
+                : 'text-[#6b4d8a] hover:text-[#a78bde]',
+            )}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

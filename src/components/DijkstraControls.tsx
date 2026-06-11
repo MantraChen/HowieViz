@@ -12,7 +12,7 @@ export function DijkstraControls() {
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 
   const inputClass =
-    'h-9 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors disabled:opacity-40'
+    'h-10 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors disabled:opacity-40'
 
   return (
     <div className="space-y-5">
@@ -88,7 +88,7 @@ function Btn({ onClick, disabled, variant, children }: BtnProps) {
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'w-full h-9 px-3 flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200',
+        'w-full h-10 px-4 flex items-center justify-center rounded-md border text-sm font-medium transition-all duration-200',
         styles[variant],
         disabled && 'opacity-30 cursor-not-allowed pointer-events-none',
       )}

@@ -10,9 +10,9 @@ const COMPLEXITY_ROWS = [
 ]
 
 function complexityClass(time: string): string {
-  if (time === 'O(1)')  return 'text-[#d4a8ff] font-bold'
-  if (time === 'O(n)')  return 'text-[#a78bde] font-medium'
-  return 'text-[#b892e8] font-semibold'
+  if (time.startsWith('O(1)')) return 'text-[#d4a8ff] font-bold'
+  if (time.includes('log'))    return 'text-[#b892e8] font-semibold'
+  return 'text-[#a78bde] font-medium'
 }
 
 export function HeapPage() {
@@ -53,7 +53,7 @@ export function HeapPage() {
                 {COMPLEXITY_ROWS.map(({ op, time }) => (
                   <tr key={op} className="border-b border-[#1e1630] last:border-0">
                     <td className="w-1/2 py-2 text-[#e1d2e9]">{op}</td>
-                    <td className={`w-1/2 py-2 text-right font-mono ${complexityClass(time)}`}>{time}</td>
+                    <td className={`py-2 text-right font-mono ${complexityClass(time)}`}>{time}</td>
                   </tr>
                 ))}
               </tbody>

@@ -11,8 +11,8 @@ const COMPLEXITY_ROWS = [
 ]
 
 function complexityClass(time: string): string {
-  if (time.startsWith('O(1)'))   return 'text-[#d4a8ff] font-bold'
-  if (time.startsWith('O(log)')) return 'text-[#b892e8] font-semibold'
+  if (time.startsWith('O(1)')) return 'text-[#d4a8ff] font-bold'
+  if (time.includes('log'))    return 'text-[#b892e8] font-semibold'
   return 'text-[#a78bde] font-medium'
 }
 

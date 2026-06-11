@@ -1,6 +1,13 @@
 import { create } from 'zustand'
+import type { AnimationSpeed } from '@/types'
 
 export type UFNodeHL = 'default' | 'path' | 'root' | 'merged'
+
+const SPEED_DELAY: Record<AnimationSpeed, number> = {
+  slow: 700,
+  normal: 500,
+  fast: 200,
+}
 
 export interface UFSnap {
   parent: number[]
@@ -27,6 +34,7 @@ interface UFStore {
   highlights: UFNodeHL[]
   message: string
   isAnimating: boolean
+  speed: AnimationSpeed
   unionX: string
   unionY: string
   findX: string
@@ -35,6 +43,7 @@ interface UFStore {
   setUnionY: (v: string) => void
   setFindX: (v: string) => void
   setN: (n: number) => void
+  setSpeed: (s: AnimationSpeed) => void
   union: (x: number, y: number) => void
   find: (x: number) => void
   reset: () => void
@@ -61,6 +70,7 @@ function findRoot(parent: number[], x: number): number[] {
 
 function scheduleSnaps(snaps: UFSnap[]) {
   const gen = ++animGen
+  const delay = SPEED_DELAY[useUFStore.getState().speed]
   useUFStore.setState({ isAnimating: true })
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
@@ -72,7 +82,7 @@ function scheduleSnaps(snaps: UFSnap[]) {
         message: snap.message,
         isAnimating: i < snaps.length - 1,
       })
-    }, i * 500)
+    }, i * delay)
     animTimers.push(t)
   })
 }
@@ -82,6 +92,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
   ...makeInitialState(DEFAULT_N),
   message: '',
   isAnimating: false,
+  speed: 'normal',
   unionX: '',
   unionY: '',
   findX: '',
@@ -89,6 +100,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
   setUnionX: v => set({ unionX: v }),
   setUnionY: v => set({ unionY: v }),
   setFindX: v => set({ findX: v }),
+  setSpeed: s => set({ speed: s }),
 
   setN: (n: number) => {
     cancelAnim()
