@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHeapStore, type HeapNode } from '@/store/heapStore'
+import { useState, useEffect } from 'react'
 
 const SVG_WIDTH = 560
 const SVG_HEIGHT = 320
@@ -42,14 +43,20 @@ function getNodePos(index: number): { x: number; y: number } {
 
 export function HeapVisualizer() {
   const { heap } = useHeapStore()
+  const [svgVisible, setSvgVisible] = useState(heap.length > 0)
+
+  // Show SVG as soon as there are nodes; hide only after exit animations complete
+  useEffect(() => {
+    if (heap.length > 0) setSvgVisible(true)
+  }, [heap.length])
 
   const positions = heap.map((_, i) => getNodePos(i))
 
   return (
     <div className="flex flex-col gap-5">
       {/* Tree SVG */}
-      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-hidden">
-        {heap.length === 0 ? (
+      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-hidden relative">
+        {!svgVisible ? (
           <div className="flex items-center justify-center h-24 text-[#3d2d5a] text-sm font-mono">
             heap is empty
           </div>
@@ -77,20 +84,22 @@ export function HeapVisualizer() {
             })}
 
             {/* MIN label above root */}
-            <text
-              x={positions[0]?.x ?? SVG_WIDTH / 2}
-              y={(positions[0]?.y ?? 30) - NODE_RADIUS - 5}
-              textAnchor="middle"
-              fontSize={9}
-              fontWeight="bold"
-              fill="#c9a0ff"
-              letterSpacing="0.1em"
-            >
-              MIN
-            </text>
+            {heap.length > 0 && (
+              <text
+                x={positions[0]?.x ?? SVG_WIDTH / 2}
+                y={(positions[0]?.y ?? 30) - NODE_RADIUS - 5}
+                textAnchor="middle"
+                fontSize={9}
+                fontWeight="bold"
+                fill="#c9a0ff"
+                letterSpacing="0.1em"
+              >
+                MIN
+              </text>
+            )}
 
             {/* Node circles — use motion.circle for smooth cx/cy transitions */}
-            <AnimatePresence>
+            <AnimatePresence onExitComplete={() => { if (heap.length === 0) setSvgVisible(false) }}>
               {heap.map((node, index) => {
                 const { x, y } = positions[index]
                 const hl = node.highlight
@@ -133,7 +142,7 @@ export function HeapVisualizer() {
 
       {/* Array representation */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <span className="text-[10px] text-[#6b4d8a] font-mono uppercase tracking-wider">
             array repr
           </span>
@@ -141,7 +150,7 @@ export function HeapVisualizer() {
             [{heap.map(n => n.value).join(', ')}]
           </span>
         </div>
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center justify-center gap-1 flex-wrap">
           <AnimatePresence mode="popLayout">
             {heap.map((node, i) => (
               <motion.div
@@ -188,7 +197,7 @@ const LEGEND: { key: HeapNode['highlight']; label: string }[] = [
 
 function Legend() {
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center justify-center gap-4 flex-wrap">
       {LEGEND.map(({ key, label }) => (
         <div key={key} className="flex items-center gap-1.5">
           <div

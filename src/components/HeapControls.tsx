@@ -16,6 +16,7 @@ export function HeapControls() {
     peek,
     buildHeap,
     clear,
+    reset,
   } = useHeapStore()
 
   const parsed = parseInt(inputValue, 10)
@@ -100,31 +101,39 @@ export function HeapControls() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#6b4d8a]">Speed:</span>
-          {(['slow', 'normal', 'fast'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setSpeed(s)}
-              className={cn(
-                'text-xs w-14 h-7 rounded capitalize transition-all duration-200 text-center',
-                speed === s
-                  ? 'bg-[#744cae] text-white font-medium shadow-[0_0_12px_rgba(180,130,232,0.4)]'
-                  : 'text-[#6b4d8a] hover:text-[#a78bde]',
-              )}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => !isAnimating && clear()}
+      <div className="grid grid-cols-2 gap-2">
+        <Btn
+          onClick={() => !isAnimating && reset()}
           disabled={isAnimating}
-          className="text-xs text-[#3d2d5a] hover:text-[#a78bde] transition-colors disabled:pointer-events-none"
+          variant="neutral"
+        >
+          Reset
+        </Btn>
+        <Btn
+          onClick={() => !isAnimating && !isEmpty && clear()}
+          disabled={isAnimating || isEmpty}
+          variant="danger"
         >
           Clear
-        </button>
+        </Btn>
+      </div>
+
+      <div className="flex items-center gap-2 pt-1">
+        <span className="text-xs text-[#6b4d8a]">Speed:</span>
+        {(['slow', 'normal', 'fast'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setSpeed(s)}
+            className={cn(
+              'text-xs w-14 h-7 rounded capitalize transition-all duration-200 text-center',
+              speed === s
+                ? 'bg-[#744cae] text-white font-medium shadow-[0_0_12px_rgba(180,130,232,0.4)]'
+                : 'text-[#6b4d8a] hover:text-[#a78bde]',
+            )}
+          >
+            {s}
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -133,7 +142,7 @@ export function HeapControls() {
 interface BtnProps {
   onClick: () => void
   disabled: boolean
-  variant: 'primary' | 'danger' | 'active'
+  variant: 'primary' | 'danger' | 'active' | 'neutral'
   children: React.ReactNode
 }
 
@@ -145,6 +154,8 @@ function Btn({ onClick, disabled, variant, children }: BtnProps) {
       'bg-[#9b6fd4]/15 hover:bg-[#9b6fd4] border-[#9b6fd4]/40 text-[#c9a0ff] hover:text-white hover:shadow-[0_0_12px_rgba(155,111,212,0.4)]',
     danger:
       'bg-[#ff6b8a]/10 hover:bg-[#ff6b8a] border-[#ff6b8a]/35 text-[#ff6b8a] hover:text-white hover:shadow-[0_0_12px_rgba(255,107,138,0.35)]',
+    neutral:
+      'bg-transparent hover:bg-[#1e1630] border-[#2a1f3d] hover:border-[#3d2d5a] text-[#6b4d8a] hover:text-[#a78bde]',
   }
   return (
     <button

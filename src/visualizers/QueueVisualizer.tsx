@@ -45,9 +45,9 @@ export function QueueVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex items-end justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
+        <div className="flex items-center justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
           {elements.length === 0 && (
-            <span className="text-[#3d2d5a] text-sm m-auto">Queue is empty</span>
+            <span className="text-[#3d2d5a] text-sm">Queue is empty</span>
           )}
           <AnimatePresence mode="popLayout">
             {elements.map((el, idx) => (
@@ -98,7 +98,7 @@ export function QueueVisualizer() {
           </AnimatePresence>
         </div>
 
-        <div className="mt-1">
+        <div className="mt-1 text-center">
           <span className="text-[10px] text-[#6b4d8a] font-mono">size: {elements.length}</span>
         </div>
       </div>
@@ -117,7 +117,7 @@ const LEGEND_LABELS: Record<NonNullable<QueueElement['highlight']>, string> = {
 
 function Legend() {
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center justify-center gap-4 flex-wrap">
       {(Object.keys(HIGHLIGHT_STYLES) as NonNullable<QueueElement['highlight']>[]).map((key) => (
         <div key={key} className="flex items-center gap-1.5">
           <div className={`w-2.5 h-2.5 rounded-full border-2 ${HIGHLIGHT_STYLES[key]}`} />

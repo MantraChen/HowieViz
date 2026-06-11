@@ -17,6 +17,7 @@ const SPEED_DELAY: Record<AnimationSpeed, number> = {
 // Module-level timer state so Zustand state stays serializable
 let searchTimers: ReturnType<typeof setTimeout>[] = []
 let searchId = 0
+let resetTimer: ReturnType<typeof setTimeout> | null = null
 
 function cancelPendingSearch() {
   searchTimers.forEach(clearTimeout)
@@ -180,9 +181,19 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
 
   reset: () => {
     cancelPendingSearch()
-    set({
-      isSearching: false,
-      nodes: DEFAULT_NODES.map((n) => ({ ...n, id: nanoid(), highlight: 'default' })),
-    })
+    if (resetTimer) { clearTimeout(resetTimer); resetTimer = null }
+    const { nodes } = get()
+    set({ isSearching: false })
+    if (nodes.length === 0) {
+      set({ nodes: DEFAULT_NODES.map((n) => ({ ...n, id: nanoid(), highlight: 'default' as const })) })
+      return
+    }
+    set({ nodes: nodes.map((n) => ({ ...n, highlight: 'deleted' as const })) })
+    resetTimer = setTimeout(() => {
+      resetTimer = null
+      useLinkedListStore.setState({
+        nodes: DEFAULT_NODES.map((n) => ({ ...n, id: nanoid(), highlight: 'default' as const })),
+      })
+    }, 650)
   },
 }))

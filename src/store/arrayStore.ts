@@ -24,7 +24,9 @@ const DEFAULT_ELEMENTS: ArrayElement[] = [10, 25, 7, 42, 18].map((v) => ({
   highlight: 'default',
 }))
 
-export const useArrayStore = create<ArrayStore>((set) => ({
+let resetTimer: ReturnType<typeof setTimeout> | null = null
+
+export const useArrayStore = create<ArrayStore>((set, get) => ({
   elements: DEFAULT_ELEMENTS,
   speed: 'normal',
   inputValue: '',
@@ -73,5 +75,19 @@ export const useArrayStore = create<ArrayStore>((set) => ({
       return { elements: updated }
     }),
 
-  reset: () => set({ elements: DEFAULT_ELEMENTS.map((el) => ({ ...el, id: nanoid(), highlight: 'default' })) }),
+  reset: () => {
+    if (resetTimer) { clearTimeout(resetTimer); resetTimer = null }
+    const { elements } = get()
+    if (elements.length === 0) {
+      set({ elements: DEFAULT_ELEMENTS.map((el) => ({ ...el, id: nanoid(), highlight: 'default' as const })) })
+      return
+    }
+    set({ elements: elements.map((el) => ({ ...el, highlight: 'deleted' as const })) })
+    resetTimer = setTimeout(() => {
+      resetTimer = null
+      useArrayStore.setState({
+        elements: DEFAULT_ELEMENTS.map((el) => ({ ...el, id: nanoid(), highlight: 'default' as const })),
+      })
+    }, 650)
+  },
 }))

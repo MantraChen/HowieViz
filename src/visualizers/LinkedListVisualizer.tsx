@@ -104,7 +104,7 @@ export function LinkedListVisualizer() {
           )}
         </div>
 
-        <div className="mt-1">
+        <div className="mt-1 text-center">
           <span className="text-[10px] text-[#6b4d8a] font-mono">length: {nodes.length}</span>
         </div>
       </div>
@@ -134,7 +134,7 @@ const LEGEND_LABELS: Record<NonNullable<ListNode['highlight']>, string> = {
 
 function Legend() {
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center justify-center gap-4 flex-wrap">
       {(Object.keys(HIGHLIGHT_STYLES) as NonNullable<ListNode['highlight']>[]).map((key) => (
         <div key={key} className="flex items-center gap-1.5">
           <div className={`w-2.5 h-2.5 rounded-full border-2 ${HIGHLIGHT_STYLES[key]}`} />

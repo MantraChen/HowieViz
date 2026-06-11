@@ -28,7 +28,9 @@ const DEFAULT_ELEMENTS: QueueElement[] = [12, 5, 30, 8, 21].map((v) => ({
   highlight: 'default',
 }))
 
-export const useQueueStore = create<QueueStore>((set) => ({
+let resetTimer: ReturnType<typeof setTimeout> | null = null
+
+export const useQueueStore = create<QueueStore>((set, get) => ({
   elements: DEFAULT_ELEMENTS,
   speed: 'normal',
   inputValue: '',
@@ -71,5 +73,19 @@ export const useQueueStore = create<QueueStore>((set) => ({
       return { elements: state.elements.map((el) => ({ ...el, highlight: 'deleted' as const })) }
     }),
 
-  reset: () => set({ elements: DEFAULT_ELEMENTS.map((el) => ({ ...el, id: nanoid(), highlight: 'default' })) }),
+  reset: () => {
+    if (resetTimer) { clearTimeout(resetTimer); resetTimer = null }
+    const { elements } = get()
+    if (elements.length === 0) {
+      set({ elements: DEFAULT_ELEMENTS.map((el) => ({ ...el, id: nanoid(), highlight: 'default' as const })) })
+      return
+    }
+    set({ elements: elements.map((el) => ({ ...el, highlight: 'deleted' as const })) })
+    resetTimer = setTimeout(() => {
+      resetTimer = null
+      useQueueStore.setState({
+        elements: DEFAULT_ELEMENTS.map((el) => ({ ...el, id: nanoid(), highlight: 'default' as const })),
+      })
+    }, 650)
+  },
 }))

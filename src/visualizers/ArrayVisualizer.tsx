@@ -12,35 +12,36 @@ const HIGHLIGHT_STYLES: Record<NonNullable<ArrayElement['highlight']>, string> =
 }
 
 export function ArrayVisualizer() {
-  const { elements, pop, clearHighlights } = useArrayStore()
+  const { elements, clearHighlights } = useArrayStore()
 
   useEffect(() => {
-    const highlighted = elements.some((el) => el.highlight !== 'default')
-    if (!highlighted) return
+    // Handle deleted element: find and remove it after exit animation plays
+    const deletedIdx = elements.findIndex(el => el.highlight === 'deleted')
+    if (deletedIdx !== -1) {
+      const timer = setTimeout(() => {
+        useArrayStore.setState(state => ({
+          elements: state.elements
+            .filter((_, i) => i !== deletedIdx)
+            .map(el => ({ ...el, highlight: 'default' as const })),
+        }))
+      }, 700)
+      return () => clearTimeout(timer)
+    }
 
-    const isPopping = elements[elements.length - 1]?.highlight === 'deleted'
-
-    const timer = setTimeout(
-      () => {
-        if (isPopping) {
-          useArrayStore.setState((state) => ({
-            elements: state.elements.slice(0, -1).map((el) => ({ ...el, highlight: 'default' as const })),
-          }))
-        } else {
-          clearHighlights()
-        }
-      },
-      isPopping ? 700 : 600,
-    )
-    return () => clearTimeout(timer)
-  }, [elements, clearHighlights, pop])
+    // Clear any non-default highlight (e.g. inserted, active) after a short pause
+    const hasHighlight = elements.some(el => el.highlight !== 'default')
+    if (hasHighlight) {
+      const timer = setTimeout(clearHighlights, 600)
+      return () => clearTimeout(timer)
+    }
+  }, [elements, clearHighlights])
 
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex items-end justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
+        <div className="flex items-center justify-center gap-2 min-h-[300px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
           {elements.length === 0 && (
-            <span className="text-[#3d2d5a] text-sm m-auto">Array is empty</span>
+            <span className="text-[#3d2d5a] text-sm">Array is empty</span>
           )}
           <AnimatePresence mode="popLayout">
             {elements.map((el, idx) => (
@@ -72,7 +73,7 @@ export function ArrayVisualizer() {
           </AnimatePresence>
         </div>
 
-        <div className="mt-1">
+        <div className="mt-1 text-center">
           <span className="text-[10px] text-[#6b4d8a] font-mono">length: {elements.length}</span>
         </div>
       </div>
@@ -91,7 +92,7 @@ const LEGEND_LABELS: Record<NonNullable<ArrayElement['highlight']>, string> = {
 
 function Legend() {
   return (
-    <div className="flex items-center gap-4 flex-wrap">
+    <div className="flex items-center justify-center gap-4 flex-wrap">
       {(Object.keys(HIGHLIGHT_STYLES) as NonNullable<ArrayElement['highlight']>[]).map((key) => (
         <div key={key} className="flex items-center gap-1.5">
           <div className={`w-2.5 h-2.5 rounded-full border-2 ${HIGHLIGHT_STYLES[key]}`} />
