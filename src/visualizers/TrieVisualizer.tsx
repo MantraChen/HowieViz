@@ -115,11 +115,11 @@ export function TrieVisualizer() {
             if (id === rootId) {
               return (
                 <g key={id}>
-                  <circle cx={pos.x} cy={pos.y} r={NODE_R} fill="#1c1530" stroke="#744cae" strokeWidth={2} />
-                  <text x={pos.x} y={pos.y} textAnchor="middle" dominantBaseline="central"
-                    fontSize={10} fontWeight="700" fill="#a78bde"
+                  <circle cx={pos.x} cy={pos.y} r={14} fill="#141020" stroke="#744cae" strokeWidth={1.5} />
+                  <text x={pos.x} y={pos.y + 14 + 10} textAnchor="middle" dominantBaseline="central"
+                    fontSize={10} fontWeight="500" fill="#a78bde"
                     style={{ pointerEvents: 'none', userSelect: 'none' }}>
-                    root
+                    ROOT
                   </text>
                 </g>
               )
