@@ -10,6 +10,7 @@ const CATEGORIES = [
       { label: 'Array', path: '/visualizer/array', ready: true },
       { label: 'Stack', path: '/visualizer/stack', ready: true },
       { label: 'Queue', path: '/visualizer/queue', ready: true },
+      { label: 'Linked List', path: '/visualizer/linked-list', ready: true },
     ],
   },
   {
