@@ -1,9 +1,10 @@
 import { useUFStore, type UFNodeHL } from '@/store/unionFindStore'
 
 const NODE_R = 22
-const SVG_W = 560
+const MIN_SVG_W = 560
 const H_PER_LEVEL = 70
 const TOP_PAD = 30
+const NODE_GAP = 12
 
 const NODE_FILL: Record<UFNodeHL, string> = {
   default: '#1c1530',
@@ -48,17 +49,20 @@ function buildTrees(parent: number[]): TreeNode[] {
 
 interface Pos { x: number; y: number }
 
-function layoutForest(trees: TreeNode[]): Record<number, Pos> {
+function subtreeWidth(node: TreeNode): number {
+  if (node.children.length === 0) return NODE_R * 2 + NODE_GAP
+  return node.children.reduce((sum, c) => sum + subtreeWidth(c), 0)
+}
+
+function forestTotalWidth(trees: TreeNode[]): number {
+  return trees.reduce((s, t) => s + subtreeWidth(t), 0)
+}
+
+function layoutForest(trees: TreeNode[], svgW: number): Record<number, Pos> {
   const positions: Record<number, Pos> = {}
-  const GAP = 12
+  const totalW = forestTotalWidth(trees)
+  const startX = Math.max(0, (svgW - totalW) / 2)
 
-  // First pass: compute subtree widths
-  function subtreeWidth(node: TreeNode): number {
-    if (node.children.length === 0) return NODE_R * 2 + GAP
-    return node.children.reduce((sum, c) => sum + subtreeWidth(c), 0)
-  }
-
-  // Second pass: assign x based on subtree widths
   function assign(node: TreeNode, x: number, depth: number) {
     const w = subtreeWidth(node)
     positions[node.id] = { x: x + w / 2, y: TOP_PAD + depth * H_PER_LEVEL }
@@ -69,10 +73,6 @@ function layoutForest(trees: TreeNode[]): Record<number, Pos> {
       cx += cw
     }
   }
-
-  // Compute total width for centering
-  const totalW = trees.reduce((s, t) => s + subtreeWidth(t), 0)
-  const startX = Math.max(0, (SVG_W - totalW) / 2)
 
   let cx = startX
   for (const tree of trees) {
@@ -93,7 +93,9 @@ export function UnionFindVisualizer() {
   const { parent, rank, highlights, message, n } = useUFStore()
 
   const trees = buildTrees(parent)
-  const positions = layoutForest(trees)
+  const totalW = forestTotalWidth(trees)
+  const svgW = Math.max(MIN_SVG_W, totalW)
+  const positions = layoutForest(trees, svgW)
   const maxDepth = trees.length > 0 ? Math.max(...trees.map(treeDepth)) : 1
   const svgH = Math.max(120, maxDepth * H_PER_LEVEL + TOP_PAD + NODE_R + 20)
 
@@ -101,7 +103,7 @@ export function UnionFindVisualizer() {
     <div className="flex flex-col gap-4">
       {/* Forest SVG */}
       <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-hidden">
-        <svg viewBox={`0 0 ${SVG_W} ${svgH}`} width="100%" style={{ display: 'block' }}>
+        <svg viewBox={`0 0 ${svgW} ${svgH}`} width="100%" style={{ display: 'block' }}>
           {/* Edges */}
           {Array.from({ length: n }, (_, i) => i).map(i => {
             if (parent[i] === i) return null
@@ -162,10 +164,10 @@ export function UnionFindVisualizer() {
       )}
 
       {/* Arrays */}
-      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] px-4 py-3 space-y-3">
-        <ArrayRow label="index" values={Array.from({ length: n }, (_, i) => i)} highlights={new Array(n).fill('default') as UFNodeHL[]} labelColor="#6b4d8a" />
-        <ArrayRow label="parent" values={parent} highlights={highlights} />
-        <ArrayRow label="rank  " values={rank} highlights={new Array(n).fill('default') as UFNodeHL[]} labelColor="#6b4d8a" />
+      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] px-4 py-3 space-y-3 overflow-x-auto">
+        <ArrayRow n={n} label="index" values={Array.from({ length: n }, (_, i) => i)} highlights={new Array(n).fill('default') as UFNodeHL[]} labelColor="#6b4d8a" />
+        <ArrayRow n={n} label="parent" values={parent} highlights={highlights} />
+        <ArrayRow n={n} label="rank  " values={rank} highlights={new Array(n).fill('default') as UFNodeHL[]} labelColor="#6b4d8a" />
       </div>
 
       <Legend />
@@ -173,23 +175,29 @@ export function UnionFindVisualizer() {
   )
 }
 
-function ArrayRow({ label, values, highlights, labelColor }: {
+function ArrayRow({ n, label, values, highlights, labelColor }: {
+  n: number
   label: string
   values: number[]
   highlights: UFNodeHL[]
   labelColor?: string
 }) {
+  const cellSize = n > 10 ? 22 : 32
+  const fontSize = n > 10 ? 11 : 12
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs font-mono w-14 text-right shrink-0" style={{ color: labelColor ?? '#a78bde' }}>
         {label}
       </span>
-      <div className="flex gap-1">
+      <div className="flex gap-0.5">
         {values.map((v, i) => (
           <div
             key={i}
-            className="w-8 h-8 flex items-center justify-center rounded border text-xs font-mono font-bold"
+            className="flex items-center justify-center rounded border font-mono font-bold shrink-0"
             style={{
+              width: cellSize,
+              height: cellSize,
+              fontSize,
               background: highlights[i] === 'default' ? '#1c1530' : NODE_FILL[highlights[i]],
               borderColor: highlights[i] === 'default' ? '#2a1f3d' : NODE_STROKE[highlights[i]],
               color: highlights[i] === 'default' ? '#f0eaf8' : TEXT_COLOR[highlights[i]],
