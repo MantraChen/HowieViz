@@ -3,9 +3,10 @@ import { useHeapStore, type HeapNode } from '@/store/heapStore'
 import { useState, useEffect } from 'react'
 
 const SVG_WIDTH = 560
-const SVG_HEIGHT = 320
+const SVG_HEIGHT = 340
 const NODE_RADIUS = 22
 const LEVEL_HEIGHT = 74
+const TOP_PADDING = 24
 
 const FILL: Record<NonNullable<HeapNode['highlight']>, string> = {
   default:  '#1c1530',
@@ -37,7 +38,7 @@ function getNodePos(index: number): { x: number; y: number } {
   const posInLevel = index - levelStart
   const totalInLevel = Math.pow(2, level)
   const x = (posInLevel + 0.5) / totalInLevel * SVG_WIDTH
-  const y = level * LEVEL_HEIGHT + NODE_RADIUS + 10
+  const y = level * LEVEL_HEIGHT + NODE_RADIUS + 10 + TOP_PADDING
   return { x, y }
 }
 
