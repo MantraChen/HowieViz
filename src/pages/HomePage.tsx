@@ -18,8 +18,8 @@ const CATEGORIES = [
     title: 'Trees',
     description: 'Binary search trees, heaps, and balanced trees. Visualize rotations and traversals.',
     items: [
-      { label: 'Binary Search Tree', path: '#', ready: false },
-      { label: 'Binary Heap', path: '#', ready: false },
+      { label: 'Binary Search Tree', path: '/visualizer/bst', ready: true },
+      { label: 'Binary Heap', path: '/visualizer/binary-heap', ready: true },
       { label: 'AVL Tree', path: '#', ready: false },
     ],
   },
