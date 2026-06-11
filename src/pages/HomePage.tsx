@@ -6,7 +6,10 @@ const CATEGORIES = [
     icon: LayoutList,
     title: 'Linear Structures',
     description: 'Arrays, stacks, queues, and linked lists with step-by-step operation animations.',
-    items: [{ label: 'Array', path: '/visualizer/array', ready: true }],
+    items: [
+      { label: 'Array', path: '/visualizer/array', ready: true },
+      { label: 'Stack', path: '/visualizer/stack', ready: true },
+    ],
   },
   {
     icon: GitBranch,
