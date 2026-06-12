@@ -51,11 +51,11 @@ function buildDefaultGraph(): { nodes: Record<string, FWNode>; edges: Record<str
   const [id1, id2, id3, id4, id5] = Array.from({ length: 5 }, () => nanoid())
 
   const nodes: Record<string, FWNode> = {
-    [id1]: { id: id1, label: '1', x: 280, y: 55,  highlight: 'default' },
-    [id2]: { id: id2, label: '2', x: 100, y: 185, highlight: 'default' },
-    [id3]: { id: id3, label: '3', x: 175, y: 365, highlight: 'default' },
-    [id4]: { id: id4, label: '4', x: 385, y: 365, highlight: 'default' },
-    [id5]: { id: id5, label: '5', x: 460, y: 185, highlight: 'default' },
+    [id1]: { id: id1, label: '1', x: 150, y: 40,  highlight: 'default' },
+    [id2]: { id: id2, label: '2', x: 255, y: 116, highlight: 'default' },
+    [id3]: { id: id3, label: '3', x: 215, y: 239, highlight: 'default' },
+    [id4]: { id: id4, label: '4', x: 85,  y: 239, highlight: 'default' },
+    [id5]: { id: id5, label: '5', x: 45,  y: 116, highlight: 'default' },
   }
 
   const mk = (from: string, to: string, weight: number): FWEdge => ({

@@ -56,12 +56,12 @@ function buildDefaultGraph(): { nodes: Record<string, KruskalNode>; edges: Recor
   const [id1, id2, id3, id4, id5, id6] = Array.from({ length: 6 }, () => nanoid())
 
   const nodes: Record<string, KruskalNode> = {
-    [id1]: { id: id1, label: '1', x: 270, y: 55,  highlight: 'default' },
-    [id2]: { id: id2, label: '2', x: 100, y: 165, highlight: 'default' },
-    [id3]: { id: id3, label: '3', x: 440, y: 165, highlight: 'default' },
-    [id4]: { id: id4, label: '4', x: 160, y: 295, highlight: 'default' },
-    [id5]: { id: id5, label: '5', x: 380, y: 295, highlight: 'default' },
-    [id6]: { id: id6, label: '6', x: 270, y: 380, highlight: 'default' },
+    [id1]: { id: id1, label: '1', x: 190, y: 55,  highlight: 'default' },
+    [id2]: { id: id2, label: '2', x: 60,  y: 165, highlight: 'default' },
+    [id3]: { id: id3, label: '3', x: 320, y: 165, highlight: 'default' },
+    [id4]: { id: id4, label: '4', x: 95,  y: 305, highlight: 'default' },
+    [id5]: { id: id5, label: '5', x: 285, y: 305, highlight: 'default' },
+    [id6]: { id: id6, label: '6', x: 190, y: 390, highlight: 'default' },
   }
 
   const mk = (from: string, to: string, weight: number): KruskalEdge => ({
