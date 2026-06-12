@@ -47,6 +47,65 @@ function nowTime() {
   return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
+function buildSnaps(items: KnapsackItem[], W: number): { dp: number[][]; snaps: KnapsackSnap[] } {
+  const n = items.length
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0))
+  const snaps: KnapsackSnap[] = []
+
+  for (let i = 1; i <= n; i++) {
+    for (let w = 0; w <= W; w++) {
+      const item = items[i - 1]
+      if (item.weight <= w) {
+        const take = dp[i - 1][w - item.weight] + item.value
+        const skip = dp[i - 1][w]
+        dp[i][w] = Math.max(skip, take)
+        snaps.push({
+          table: dp.map(row => [...row]),
+          activeRow: i, activeCol: w,
+          phase: 'fill', selectedItems: new Array(n).fill(false),
+          currentLine: 8,
+          stepText: w === 0 ? '' : `dp[${i}][${w}] = max(${skip}, ${dp[i - 1][w - item.weight]}+${item.value}) = ${dp[i][w]}`,
+        })
+      } else {
+        dp[i][w] = dp[i - 1][w]
+        snaps.push({
+          table: dp.map(row => [...row]),
+          activeRow: i, activeCol: w,
+          phase: 'fill', selectedItems: new Array(n).fill(false),
+          currentLine: 6,
+          stepText: w === 0 ? '' : `dp[${i}][${w}] = dp[${i - 1}][${w}] = ${dp[i][w]}  (weight ${item.weight} > ${w})`,
+        })
+      }
+    }
+  }
+
+  const selected = new Array(n).fill(false)
+  let w = W
+  for (let i = n; i > 0; i--) {
+    if (dp[i][w] !== dp[i - 1][w]) {
+      selected[i - 1] = true
+      w -= items[i - 1].weight
+      snaps.push({
+        table: dp.map(row => [...row]),
+        activeRow: i, activeCol: w + items[i - 1].weight,
+        phase: 'backtrack', selectedItems: [...selected],
+        currentLine: 15,
+        stepText: `Selected item ${i} (w:${items[i - 1].weight}, v:${items[i - 1].value})`,
+      })
+    }
+  }
+
+  snaps.push({
+    table: dp.map(row => [...row]),
+    activeRow: -1, activeCol: -1,
+    phase: 'done', selectedItems: [...selected],
+    currentLine: 10,
+    stepText: `Done! Optimal value: ${dp[n][W]}`,
+  })
+
+  return { dp, snaps }
+}
+
 interface KnapsackStore {
   items: KnapsackItem[]
   capacity: number
@@ -55,6 +114,7 @@ interface KnapsackStore {
   valueInput: string
   table: number[][]
   snaps: KnapsackSnap[]
+  snapIndex: number
   currentSnap: KnapsackSnap | null
   isAnimating: boolean
   isDone: boolean
@@ -66,10 +126,14 @@ interface KnapsackStore {
   setCapacityInput: (v: string) => void
   setWeightInput: (v: string) => void
   setValueInput: (v: string) => void
+  setItems: (items: KnapsackItem[], capacity: string) => void
   addItem: () => void
   removeItem: (i: number) => void
   setSpeed: (s: AnimationSpeed) => void
   solve: () => void
+  prepareSnaps: () => void
+  stepForward: () => void
+  stepBack: () => void
   reset: () => void
   clearSteps: () => void
   runBenchmark: () => void
@@ -83,6 +147,7 @@ export const useKnapsackStore = create<KnapsackStore>((set, get) => ({
   valueInput: '',
   table: [],
   snaps: [],
+  snapIndex: -1,
   currentSnap: null,
   isAnimating: false,
   isDone: false,
@@ -96,6 +161,22 @@ export const useKnapsackStore = create<KnapsackStore>((set, get) => ({
   setWeightInput: v => set({ weightInput: v }),
   setValueInput: v => set({ valueInput: v }),
   setSpeed: s => set({ speed: s }),
+
+  setItems: (items, capacity) => {
+    cancelAnim()
+    set({
+      items,
+      capacityInput: capacity,
+      table: [],
+      snaps: [],
+      snapIndex: -1,
+      currentSnap: null,
+      isAnimating: false,
+      isDone: false,
+      steps: [],
+      statusText: 'Press Solve to start the animation.',
+    })
+  },
 
   addItem: () => {
     const { weightInput, valueInput, items } = get()
@@ -117,62 +198,9 @@ export const useKnapsackStore = create<KnapsackStore>((set, get) => ({
     if (isNaN(rawW) || rawW <= 0 || items.length === 0) return
     const W = Math.min(rawW, 20)
 
-    const n = items.length
-    const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0))
-    const snaps: KnapsackSnap[] = []
+    const { dp, snaps } = buildSnaps(items, W)
 
-    for (let i = 1; i <= n; i++) {
-      for (let w = 0; w <= W; w++) {
-        const item = items[i - 1]
-        if (item.weight <= w) {
-          const take = dp[i - 1][w - item.weight] + item.value
-          const skip = dp[i - 1][w]
-          dp[i][w] = Math.max(skip, take)
-          snaps.push({
-            table: dp.map(row => [...row]),
-            activeRow: i, activeCol: w,
-            phase: 'fill', selectedItems: new Array(n).fill(false),
-            currentLine: 8,
-            stepText: w === 0 ? '' : `dp[${i}][${w}] = max(${skip}, ${dp[i - 1][w - item.weight]}+${item.value}) = ${dp[i][w]}`,
-          })
-        } else {
-          dp[i][w] = dp[i - 1][w]
-          snaps.push({
-            table: dp.map(row => [...row]),
-            activeRow: i, activeCol: w,
-            phase: 'fill', selectedItems: new Array(n).fill(false),
-            currentLine: 6,
-            stepText: w === 0 ? '' : `dp[${i}][${w}] = dp[${i - 1}][${w}] = ${dp[i][w]}  (weight ${item.weight} > ${w})`,
-          })
-        }
-      }
-    }
-
-    const selected = new Array(n).fill(false)
-    let w = W
-    for (let i = n; i > 0; i--) {
-      if (dp[i][w] !== dp[i - 1][w]) {
-        selected[i - 1] = true
-        w -= items[i - 1].weight
-        snaps.push({
-          table: dp.map(row => [...row]),
-          activeRow: i, activeCol: w + items[i - 1].weight,
-          phase: 'backtrack', selectedItems: [...selected],
-          currentLine: 15,
-          stepText: `Selected item ${i} (w:${items[i - 1].weight}, v:${items[i - 1].value})`,
-        })
-      }
-    }
-
-    snaps.push({
-      table: dp.map(row => [...row]),
-      activeRow: -1, activeCol: -1,
-      phase: 'done', selectedItems: [...selected],
-      currentLine: 10,
-      stepText: `Done! Optimal value: ${dp[n][W]}`,
-    })
-
-    set({ table: dp, snaps, isAnimating: true, isDone: false, steps: [], statusText: 'Solving…' })
+    set({ table: dp, snaps, snapIndex: -1, isAnimating: true, isDone: false, steps: [], statusText: 'Solving…' })
 
     const delay = SPEED_DELAY[speed]
     const gen = ++animGen
@@ -195,6 +223,62 @@ export const useKnapsackStore = create<KnapsackStore>((set, get) => ({
     })
   },
 
+  prepareSnaps: () => {
+    cancelAnim()
+    const { items, capacityInput } = get()
+    const rawW = parseInt(capacityInput, 10)
+    if (isNaN(rawW) || rawW <= 0 || items.length === 0) return
+    const W = Math.min(rawW, 20)
+
+    const { dp, snaps } = buildSnaps(items, W)
+    const first = snaps[0]
+
+    set({
+      table: dp,
+      snaps,
+      snapIndex: 0,
+      currentSnap: first,
+      isAnimating: false,
+      isDone: false,
+      steps: [],
+      statusText: first.stepText || `Step 1 / ${snaps.length}`,
+    })
+  },
+
+  stepForward: () => {
+    const { snaps, snapIndex } = get()
+    if (snaps.length === 0) {
+      get().prepareSnaps()
+      return
+    }
+    if (snapIndex >= snaps.length - 1) return
+    const newIndex = snapIndex + 1
+    const snap = snaps[newIndex]
+    const time = nowTime()
+    set(prev => ({
+      snapIndex: newIndex,
+      currentSnap: snap,
+      isDone: snap.phase === 'done',
+      statusText: snap.stepText || prev.statusText,
+      steps: snap.stepText
+        ? [...prev.steps, { time, text: snap.stepText }]
+        : prev.steps,
+    }))
+  },
+
+  stepBack: () => {
+    const { snaps, snapIndex } = get()
+    if (snapIndex <= 0) return
+    const newIndex = snapIndex - 1
+    const snap = snaps[newIndex]
+    set({
+      snapIndex: newIndex,
+      currentSnap: snap,
+      isDone: snap.phase === 'done',
+      statusText: snap.stepText || `Step ${newIndex + 1} / ${snaps.length}`,
+    })
+  },
+
   clearSteps: () => set({ steps: [] }),
 
   reset: () => {
@@ -205,6 +289,7 @@ export const useKnapsackStore = create<KnapsackStore>((set, get) => ({
       capacityInput: '8',
       table: [],
       snaps: [],
+      snapIndex: -1,
       currentSnap: null,
       isAnimating: false,
       isDone: false,

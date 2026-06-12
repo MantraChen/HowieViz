@@ -5,6 +5,8 @@ import { KnapsackControls } from '@/components/KnapsackControls'
 import { useKnapsackStore } from '@/store/knapsackStore'
 import { cn } from '@/lib/utils'
 
+type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
+
 // ─── Pseudocode ──────────────────────────────────────────────────────────────
 
 const PSEUDOCODE_LINES = [
@@ -220,14 +222,13 @@ function CollapsibleSection({
 
 // ─── Mode switcher ────────────────────────────────────────────────────────────
 
-const MODES = [
+const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
+  { key: 'manual', label: 'Manual', available: true },
   { key: 'quiz', label: 'Quiz', available: false },
   { key: 'compare', label: 'Compare', available: false },
   { key: 'embed', label: 'Embed', available: false },
-] as const
-
-type ModeKey = (typeof MODES)[number]['key']
+]
 
 function ModeSwitcher({ active, setActive }: { active: ModeKey; setActive: (m: ModeKey) => void }) {
   return (
@@ -248,11 +249,10 @@ function ModeSwitcher({ active, setActive }: { active: ModeKey; setActive: (m: M
             {mode.label}
           </button>
           {!mode.available && (
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              <span className="bg-[#1e1630] border border-[#2a1f3d] text-[#a78bde] text-[10px] px-2 py-1 rounded-md shadow-lg">
+            <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              <span className="bg-[#1e1630] border border-[#2a1f3d] text-[#a78bde] text-[10px] px-2 py-1 rounded-md shadow-lg block">
                 Coming Soon
               </span>
-              <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#2a1f3d]" />
             </div>
           )}
         </div>
@@ -271,11 +271,13 @@ export function KnapsackPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const statusText = useKnapsackStore(s => s.statusText)
   const isAnimating = useKnapsackStore(s => s.isAnimating)
+  const snapIndex = useKnapsackStore(s => s.snapIndex)
+  const snapsLength = useKnapsackStore(s => s.snaps.length)
 
   const rightPanelContent = (
     <div className="space-y-4 p-4">
       {/* Controls — always visible, no collapse header */}
-      <KnapsackControls />
+      <KnapsackControls mode={activeMode} />
 
       {/* Divider */}
       <div className="border-t border-[#2a1f3d]" />
@@ -344,6 +346,14 @@ export function KnapsackPage() {
             isAnimating ? 'bg-[#b892e8] animate-pulse' : 'bg-[#3d2d5a]',
           )}
         />
+        {activeMode === 'manual' && snapsLength > 0 && (
+          <span className="text-[11px] text-[#6b4d8a] font-mono flex-none">
+            Step {snapIndex + 1} / {snapsLength}
+          </span>
+        )}
+        {(activeMode !== 'manual' || snapsLength > 0) && (
+          <span className="text-[#3d2d5a] text-[11px] flex-none">·</span>
+        )}
         <span className="text-[11px] text-[#e1d2e9] font-mono truncate">{statusText}</span>
       </div>
 
