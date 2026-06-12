@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useRef, useEffect } from 'react'
 import type { RSStep, RSHighlight, RSElement } from '@/store/radixSortStore'
 
 const FILL: Record<RSHighlight, string> = {
@@ -64,6 +65,13 @@ interface Props { step: RSStep; description: string }
 
 export function RadixSortVisualizer({ step, description }: Props) {
   const { array, buckets, phase, passNumber, digitPlace } = step
+  const currentArrayRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!currentArrayRef.current) return
+    const el = currentArrayRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [step])
 
   const placeLabel = (p: number) => {
     if (p === 1) return '1s'
@@ -93,9 +101,9 @@ export function RadixSortVisualizer({ step, description }: Props) {
       {/* Current array */}
       <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] p-3">
         <p className="text-[9px] text-[#6b4d8a] uppercase tracking-widest mb-2 font-medium">Current Array</p>
-        <div className="flex gap-[3px] flex-wrap">
+        <div className="flex gap-[3px] flex-wrap" ref={currentArrayRef}>
           {array.map((el, i) => (
-            <div key={i} className="flex flex-col items-center gap-0.5">
+            <div key={i} className="flex flex-col items-center gap-0.5" data-active={el.highlight !== 'default' ? 'true' : undefined}>
               <ArrayCell el={el} />
               <span className="text-[8px] font-mono text-[#3d2d5a]">{i}</span>
             </div>

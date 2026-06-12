@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQueueStore, type QueueElement } from '@/store/queueStore'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 const HIGHLIGHT_STYLES: Record<NonNullable<QueueElement['highlight']>, string> = {
   default:  'bg-[#1c1530] border-[#744cae] text-[#f0eaf8]',
@@ -11,6 +11,13 @@ const HIGHLIGHT_STYLES: Record<NonNullable<QueueElement['highlight']>, string> =
 
 export function QueueVisualizer() {
   const { elements, clearHighlights } = useQueueStore()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!scrollRef.current) return
+    const el = scrollRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [elements])
 
   useEffect(() => {
     const hasHighlighted = elements.some((el) => el.highlight !== 'default')
@@ -51,7 +58,7 @@ export function QueueVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className={`flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] ${wrapElements ? 'flex-wrap' : 'overflow-x-auto'}`}>
+        <div ref={scrollRef} className={`flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] ${wrapElements ? 'flex-wrap' : 'overflow-x-auto'}`}>
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm">Queue is empty</span>
           )}
@@ -70,6 +77,7 @@ export function QueueVisualizer() {
                   delay: el.highlight === 'deleted' ? idx * 0.05 : 0,
                 }}
                 className="flex flex-col items-center gap-1 flex-shrink-0"
+                data-active={el.highlight !== 'default' ? 'true' : undefined}
               >
                 {!wrapElements && (
                   <div className="flex items-center gap-1 h-5">

@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { useRef, useEffect } from 'react'
 import { useDequeStore, type DequeHighlight, type DequeElement } from '@/store/dequeStore'
 
 const STYLES: Record<DequeHighlight, string> = {
@@ -34,6 +35,13 @@ function getInitial(h: DequeHighlight) {
 
 export function DequeVisualizer() {
   const { elements } = useDequeStore()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!scrollRef.current) return
+    const el = scrollRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [elements])
 
   const n = elements.length
   const boxSize = n > 16 ? 36 : 48
@@ -52,7 +60,7 @@ export function DequeVisualizer() {
 
       {/* Main strip */}
       <div className="relative">
-        <div className="flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
+        <div ref={scrollRef} className="flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto">
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm">Deque is empty</span>
           )}
@@ -65,6 +73,7 @@ export function DequeVisualizer() {
                 animate={getAnimate(el.highlight)}
                 transition={{ type: 'spring', stiffness: 380, damping: 26 }}
                 className="flex flex-col items-center gap-1 flex-shrink-0"
+                data-active={el.highlight !== 'default' ? 'true' : undefined}
               >
                 {/* FRONT / REAR badges */}
                 <div className="flex items-center gap-1 h-5">

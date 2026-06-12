@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useHeapStore, type HeapNode } from '@/store/heapStore'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const SVG_WIDTH = 560
 const NODE_RADIUS = 22
@@ -44,6 +44,13 @@ function getNodePos(index: number): { x: number; y: number } {
 export function HeapVisualizer() {
   const { heap } = useHeapStore()
   const [svgVisible, setSvgVisible] = useState(heap.length > 0)
+  const arrayReprRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!arrayReprRef.current) return
+    const el = arrayReprRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [heap])
 
   // Show SVG as soon as there are nodes; hide only after exit animations complete
   useEffect(() => {
@@ -152,7 +159,7 @@ export function HeapVisualizer() {
             [{heap.map(n => n.value).join(', ')}]
           </span>
         </div>
-        <div className="flex items-center justify-center gap-1 flex-wrap">
+        <div ref={arrayReprRef} className="flex items-center justify-center gap-1 flex-wrap">
           <AnimatePresence mode="popLayout">
             {heap.map((node, i) => (
               <motion.div
@@ -163,6 +170,7 @@ export function HeapVisualizer() {
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 28 }}
                 className="flex flex-col items-center gap-0.5"
+                data-active={node.highlight !== 'default' ? 'true' : undefined}
               >
                 <div
                   className="w-9 h-9 flex items-center justify-center rounded border-2 font-mono text-xs font-semibold transition-colors duration-300"

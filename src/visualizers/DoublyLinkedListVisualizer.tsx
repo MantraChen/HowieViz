@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useDLLStore, type DLLNode } from '@/store/doublyLinkedListStore'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 const NODES_PER_ROW = 10
@@ -14,6 +14,13 @@ const HIGHLIGHT_STYLES: Record<NonNullable<DLLNode['highlight']>, string> = {
 
 export function DoublyLinkedListVisualizer() {
   const { nodes, isSearching, clearHighlights } = useDLLStore()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const el = containerRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [nodes])
 
   useEffect(() => {
     const deletedIdx = nodes.findIndex(n => n.highlight === 'deleted')
@@ -46,7 +53,7 @@ export function DoublyLinkedListVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex flex-col gap-2 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710]">
+        <div ref={containerRef} className="flex flex-col gap-2 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710]">
           {nodes.length === 0 ? (
             <div className="flex items-center gap-1">
               <NullCap side="left" />
@@ -76,6 +83,7 @@ export function DoublyLinkedListVisualizer() {
                           exit={{ opacity: 0, scale: 0.7 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                           className="flex items-start flex-shrink-0"
+                          data-active={node.highlight !== 'default' ? 'true' : undefined}
                         >
                           {/* Bidirectional arrow before each node (except first node on first chunk which already has NullCap) */}
                           {!(isFirstChunk && localIdx === 0) && <BidiArrow />}

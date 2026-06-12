@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import { useFWStore, type FWNodeHL } from '@/store/fenwickStore'
 
 const CELL_W = 44
@@ -26,6 +27,13 @@ function lowbit(x: number) { return x & (-x) }
 
 export function FenwickVisualizer() {
   const { arr, bit, arrHL, bitHL, message, resultSum } = useFWStore()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!scrollContainerRef.current) return
+    const el = scrollContainerRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [arrHL, bitHL])
   const n = arr.length
 
   // Responsibility ranges: bit[i] covers [i - lowbit(i) + 1 .. i]
@@ -37,7 +45,7 @@ export function FenwickVisualizer() {
   return (
     <div className="flex flex-col gap-4">
       {/* Arrays */}
-      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] px-5 py-4 space-y-4 overflow-x-auto">
+      <div ref={scrollContainerRef} className="rounded-xl border border-[#2a1f3d] bg-[#090710] px-5 py-4 space-y-4 overflow-x-auto">
         {/* Index row */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-mono text-[#6b4d8a] w-16 shrink-0 text-right">index</span>
@@ -123,6 +131,7 @@ export function FenwickVisualizer() {
 function Cell({ value, hl, size }: { value: number; hl: FWNodeHL; size: number }) {
   return (
     <div
+      data-active={hl !== 'default' ? 'true' : undefined}
       className="flex items-center justify-center rounded-md border text-sm font-mono font-bold"
       style={{
         width: size,

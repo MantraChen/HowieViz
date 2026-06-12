@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLinkedListStore, type ListNode } from '@/store/linkedListStore'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { ArrowRight, CornerDownLeft } from 'lucide-react'
 
 const NODES_PER_ROW = 12
@@ -14,6 +14,13 @@ const HIGHLIGHT_STYLES: Record<NonNullable<ListNode['highlight']>, string> = {
 
 export function LinkedListVisualizer() {
   const { nodes, isSearching, clearHighlights } = useLinkedListStore()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    const el = containerRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [nodes])
 
   // Remove deleted node after exit animation plays
   useEffect(() => {
@@ -50,7 +57,7 @@ export function LinkedListVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex flex-col gap-2 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710]">
+        <div ref={containerRef} className="flex flex-col gap-2 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710]">
           {nodes.length === 0 ? (
             <div className="flex items-center gap-1">
               <span className="text-[#3d2d5a] text-sm font-mono">empty</span>
@@ -75,6 +82,7 @@ export function LinkedListVisualizer() {
                           exit={{ opacity: 0, scale: 0.7 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                           className="flex items-start flex-shrink-0"
+                          data-active={node.highlight !== 'default' ? 'true' : undefined}
                         >
                           {/* Node column: box + head/tail label */}
                           <div className="flex flex-col items-center gap-1">

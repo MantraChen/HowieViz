@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { useRef, useEffect } from 'react'
 import type { CSStep, CSHighlight } from '@/store/countingSortStore'
 
 const FILL: Record<CSHighlight, string> = {
@@ -47,15 +48,17 @@ function Cell({
   index,
   showIndex,
   width,
+  isActive,
 }: {
   value: number | null
   highlight: CSHighlight
   index: number
   showIndex: boolean
   width: number
+  isActive?: boolean
 }) {
   return (
-    <div className="flex flex-col items-center gap-0.5 flex-shrink-0" style={{ width }}>
+    <div className="flex flex-col items-center gap-0.5 flex-shrink-0" style={{ width }} data-active={isActive ? 'true' : undefined}>
       <motion.div
         className="w-full flex items-center justify-center rounded border-2 font-mono font-semibold"
         style={{ height: 32, fontSize: 11 }}
@@ -77,6 +80,21 @@ function Cell({
 
 export function CountingSortVisualizer({ step, description }: Props) {
   const { inputElements, countArray, outputArray, phase } = step
+
+  const inputRef = useRef<HTMLDivElement>(null)
+  const countRef = useRef<HTMLDivElement>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const scrollToActive = (container: HTMLDivElement | null) => {
+      if (!container) return
+      const el = container.querySelector<HTMLElement>('[data-active="true"]')
+      el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    }
+    scrollToActive(inputRef.current)
+    scrollToActive(countRef.current)
+    scrollToActive(outputRef.current)
+  }, [step])
 
   // Determine display range for count array (trim trailing zeros at start/end with small padding)
   const maxNonZeroCount = countArray.reduceRight((acc, c, i) => {
@@ -110,7 +128,7 @@ export function CountingSortVisualizer({ step, description }: Props) {
       {/* Input array */}
       <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] p-3">
         <p className="text-[9px] text-[#6b4d8a] uppercase tracking-widest mb-2 font-medium">Input Array</p>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={inputRef}>
           <div className="flex gap-[3px] min-w-fit">
             {inputElements.map((el, i) => (
               <Cell
@@ -120,6 +138,7 @@ export function CountingSortVisualizer({ step, description }: Props) {
                 index={i}
                 showIndex
                 width={inputCellW}
+                isActive={el.highlight !== 'default'}
               />
             ))}
           </div>
@@ -131,7 +150,7 @@ export function CountingSortVisualizer({ step, description }: Props) {
         <p className="text-[9px] text-[#6b4d8a] uppercase tracking-widest mb-2 font-medium">
           {phase <= 1 ? 'Count Array' : 'Cumulative Array'}
         </p>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={countRef}>
           <div className="flex gap-[2px] min-w-fit">
             {countSlice.map((cell, i) => (
               <Cell
@@ -141,6 +160,7 @@ export function CountingSortVisualizer({ step, description }: Props) {
                 index={i}
                 showIndex
                 width={countCellW}
+                isActive={cell.highlight !== 'default'}
               />
             ))}
           </div>
@@ -150,7 +170,7 @@ export function CountingSortVisualizer({ step, description }: Props) {
       {/* Output array */}
       <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] p-3">
         <p className="text-[9px] text-[#6b4d8a] uppercase tracking-widest mb-2 font-medium">Output Array</p>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={outputRef}>
           <div className="flex gap-[3px] min-w-fit">
             {outputArray.map((cell, i) => (
               <Cell
@@ -160,6 +180,7 @@ export function CountingSortVisualizer({ step, description }: Props) {
                 index={i}
                 showIndex
                 width={outputCellW}
+                isActive={cell.highlight !== 'default'}
               />
             ))}
           </div>

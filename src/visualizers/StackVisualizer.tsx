@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useStackStore, type StackElement } from '@/store/stackStore'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 const HIGHLIGHT_STYLES: Record<NonNullable<StackElement['highlight']>, string> = {
   default:  'bg-[#1c1530] border-[#744cae] text-[#f0eaf8]',
@@ -11,6 +11,13 @@ const HIGHLIGHT_STYLES: Record<NonNullable<StackElement['highlight']>, string> =
 
 export function StackVisualizer() {
   const { elements, clearHighlights } = useStackStore()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!scrollRef.current) return
+    const el = scrollRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' })
+  }, [elements])
 
   useEffect(() => {
     const hasHighlighted = elements.some((el) => el.highlight !== 'default')
@@ -48,7 +55,7 @@ export function StackVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] max-h-[480px] overflow-y-auto">
+        <div ref={scrollRef} className="flex flex-col items-center gap-1.5 p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] max-h-[480px] overflow-y-auto">
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm m-auto">Stack is empty</span>
           )}
@@ -70,6 +77,7 @@ export function StackVisualizer() {
                     delay: el.highlight === 'deleted' ? displayIdx * 0.05 : 0,
                   }}
                   className="flex items-center gap-3 flex-shrink-0"
+                  data-active={el.highlight !== 'default' ? 'true' : undefined}
                 >
                   <motion.div
                     animate={

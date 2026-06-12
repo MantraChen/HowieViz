@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useArrayStore } from '@/store/arrayStore'
 import type { ArrayElement } from '@/types'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 // Box classes only (bg + border + text color). Font weight is set on the element itself.
 const HIGHLIGHT_STYLES: Record<NonNullable<ArrayElement['highlight']>, string> = {
@@ -13,6 +13,13 @@ const HIGHLIGHT_STYLES: Record<NonNullable<ArrayElement['highlight']>, string> =
 
 export function ArrayVisualizer() {
   const { elements, clearHighlights } = useArrayStore()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!scrollRef.current) return
+    const el = scrollRef.current.querySelector<HTMLElement>('[data-active="true"]')
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [elements])
 
   useEffect(() => {
     // Handle deleted element: find and remove it after exit animation plays
@@ -45,7 +52,7 @@ export function ArrayVisualizer() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <div className={`flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] ${wrapElements ? 'flex-wrap' : 'overflow-x-auto'}`}>
+        <div ref={scrollRef} className={`flex items-center justify-center gap-1.5 min-h-[80px] p-4 rounded-xl border border-[#2a1f3d] bg-[#090710] ${wrapElements ? 'flex-wrap' : 'overflow-x-auto'}`}>
           {elements.length === 0 && (
             <span className="text-[#3d2d5a] text-sm">Array is empty</span>
           )}
@@ -59,6 +66,7 @@ export function ArrayVisualizer() {
                 exit={{ opacity: 0, scale: 0.5, y: -20 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 className="flex flex-col items-center gap-1 flex-shrink-0"
+                data-active={el.highlight !== 'default' ? 'true' : undefined}
               >
                 <motion.div
                   animate={
