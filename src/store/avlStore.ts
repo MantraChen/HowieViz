@@ -32,6 +32,10 @@ function cancelAnim() {
   animGen++
 }
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 // --- Pure tree helpers ---
 
 function nodeH(nodes: AVLNodeMap, id: string | null): number {
@@ -182,17 +186,19 @@ function buildInitialTree(): { nodes: AVLNodeMap; rootId: string | null } {
 
 const INITIAL = buildInitialTree()
 
-function scheduleSnaps(snaps: Snap[], delay: number) {
+function scheduleSnaps(snaps: Snap[], delay: number, finalStatus: string) {
   const gen = ++animGen
   useAVLStore.setState({ isAnimating: true })
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
+      const isLast = i === snaps.length - 1
       useAVLStore.setState({
         nodes: snap.nodes,
         rootId: snap.rootId,
         rotationLabel: snap.rotationLabel ?? '',
-        isAnimating: i < snaps.length - 1,
+        isAnimating: !isLast,
+        ...(isLast ? { statusText: finalStatus } : {}),
       })
     }, i * delay)
     animTimers.push(t)
@@ -206,6 +212,8 @@ interface AVLStore {
   inputValue: string
   isAnimating: boolean
   rotationLabel: string
+  statusText: string
+  steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   insert: (value: number) => void
@@ -213,6 +221,8 @@ interface AVLStore {
   search: (value: number) => void
   clear: () => void
   reset: () => void
+  clearSteps: () => void
+  loadFromCSV: (csv: string) => void
 }
 
 export const useAVLStore = create<AVLStore>((set, get) => ({
@@ -222,9 +232,12 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
   inputValue: '',
   isAnimating: false,
   rotationLabel: '',
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setInputValue: v => set({ inputValue: v }),
   setSpeed: s => set({ speed: s }),
+  clearSteps: () => set({ steps: [] }),
 
   clear: () => {
     cancelAnim()
@@ -234,7 +247,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     set({ isAnimating: true, nodes: cloneNodes(nodes, 'deleted'), rotationLabel: '' })
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      set({ nodes: {}, rootId: null, isAnimating: false })
+      set({ nodes: {}, rootId: null, isAnimating: false, statusText: 'Tree cleared.' })
     }, 650)
     animTimers.push(t)
   },
@@ -245,26 +258,27 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     const gen = ++animGen
     if (Object.keys(cur).length === 0) {
       const fresh = buildInitialTree()
-      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false, rotationLabel: '' })
+      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false, rotationLabel: '', statusText: 'Tree reset to default.' })
       return
     }
     set({ isAnimating: true, nodes: cloneNodes(cur, 'deleted'), rotationLabel: '' })
     const t = setTimeout(() => {
       if (animGen !== gen) return
       const fresh = buildInitialTree()
-      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false, rotationLabel: '' })
+      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false, rotationLabel: '', statusText: 'Tree reset to default.' })
     }, 650)
     animTimers.push(t)
   },
 
   search: value => {
     cancelAnim()
-    const { nodes, rootId, speed } = get()
+    const { nodes, rootId, speed, steps } = get()
     if (rootId === null) return
     const delay = SPEED_DELAY[speed]
     const snaps: Snap[] = []
     const visited: string[] = []
     let cur: string | null = rootId
+    let foundNode = false
 
     while (cur !== null) {
       const curId: string = cur
@@ -278,6 +292,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
         for (const id of visited.slice(0, -1)) fs[id] = { ...fs[id], highlight: 'traversing' }
         fs[curId] = { ...fs[curId], highlight: 'found' }
         snaps.push({ nodes: fs, rootId })
+        foundNode = true
         break
       }
       cur = value < node.value ? node.left : node.right
@@ -292,17 +307,19 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     }
 
     snaps.push({ nodes: cloneNodes(nodes), rootId })
-    scheduleSnaps(snaps, delay)
+    const finalStatus = foundNode ? `Found ${value}` : `${value} not found`
+    const stepText = foundNode ? `Search: Found ${value}` : `Search: ${value} not found`
+    set({ steps: [...steps, { time: nowTime(), text: stepText }] })
+    scheduleSnaps(snaps, delay, finalStatus)
   },
 
   insert: value => {
     cancelAnim()
-    const { nodes, rootId, speed } = get()
+    const { nodes, rootId, speed, steps } = get()
     if (countNodes(nodes, rootId) >= 64) return
     const delay = SPEED_DELAY[speed]
     const snaps: Snap[] = []
 
-    // Find traversal path
     const path: string[] = []
     let cur: string | null = rootId
     while (cur !== null) {
@@ -312,14 +329,12 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
       cur = value < node.value ? node.left : node.right
     }
 
-    // Traversal animation
     for (let i = 0; i < path.length; i++) {
       const snap = cloneNodes(nodes)
       for (let j = 0; j <= i; j++) snap[path[j]] = { ...snap[path[j]], highlight: 'traversing' }
       snaps.push({ nodes: snap, rootId })
     }
 
-    // Insert new node manually
     const newNode: AVLNode = { id: nanoid(), value, left: null, right: null, height: 1, highlight: 'inserted' }
     let n: AVLNodeMap = { ...nodes, [newNode.id]: newNode }
     let newRootId: string | null = rootId
@@ -334,19 +349,16 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
         : { ...parent, right: newNode.id }
     }
 
-    // Show inserted node
     const ins = cloneNodes(n)
     ins[newNode.id] = { ...ins[newNode.id], highlight: 'inserted' }
     snaps.push({ nodes: ins, rootId: newRootId })
 
-    // Walk back up path, update heights, find & fix imbalance
     for (let i = path.length - 1; i >= 0; i--) {
       const nodeId = path[i]
       n = updH(n, nodeId)
       const balance = bf(n, nodeId)
 
       if (Math.abs(balance) > 1) {
-        // Show pre-rotation highlight
         const pre = cloneNodes(n)
         pre[nodeId] = { ...pre[nodeId], highlight: 'rotating' }
         const childId = balance > 1 ? n[nodeId].left : n[nodeId].right
@@ -372,12 +384,13 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     }
 
     snaps.push({ nodes: cloneNodes(n), rootId: newRootId })
-    scheduleSnaps(snaps, delay)
+    set({ steps: [...steps, { time: nowTime(), text: `Insert: ${value} added (self-balanced)` }] })
+    scheduleSnaps(snaps, delay, `Inserted ${value}`)
   },
 
   deleteAVL: value => {
     cancelAnim()
-    const { nodes, rootId, speed } = get()
+    const { nodes, rootId, speed, steps } = get()
     if (rootId === null) return
     const delay = SPEED_DELAY[speed]
     const snaps: Snap[] = []
@@ -402,11 +415,11 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
       if (last) nfs[last] = { ...nfs[last], highlight: 'notFound' }
       snaps.push({ nodes: nfs, rootId })
       snaps.push({ nodes: cloneNodes(nodes), rootId })
-      scheduleSnaps(snaps, delay)
+      set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} not found` }] })
+      scheduleSnaps(snaps, delay, `${value} not found`)
       return
     }
 
-    // Highlight target as deleted
     const del = cloneNodes(nodes)
     const targetId = visited[visited.length - 1]
     for (const id of visited.slice(0, -1)) del[id] = { ...del[id], highlight: 'traversing' }
@@ -416,6 +429,21 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     const result = deleteRaw(nodes, rootId, value)
     snaps.push({ nodes: cloneNodes(result.nodes), rootId: result.rootId })
 
-    scheduleSnaps(snaps, delay)
+    set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} removed (rebalanced)` }] })
+    scheduleSnaps(snaps, delay, `Deleted ${value}`)
+  },
+
+  loadFromCSV: (csv: string) => {
+    cancelAnim()
+    const vals = csv.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+    if (vals.length === 0) return
+    let n: AVLNodeMap = {}
+    let r: string | null = null
+    for (const v of vals) {
+      const result = insertRaw(n, r, v)
+      n = result.nodes
+      r = result.rootId
+    }
+    set({ nodes: n, rootId: r, isAnimating: false, rotationLabel: '', statusText: `Loaded ${vals.length} values` })
   },
 }))

@@ -1,11 +1,15 @@
+import { useState } from 'react'
 import { useAVLStore } from '@/store/avlStore'
 import { cn } from '@/lib/utils'
 
-export function AVLControls() {
+export function AVLControls({ mode: _mode }: { mode?: string }) {
   const {
     nodes, rootId, inputValue, speed, isAnimating,
-    setInputValue, setSpeed, insert, deleteAVL, search, clear, reset,
+    setInputValue, setSpeed, insert, deleteAVL, search, clear, reset, loadFromCSV,
   } = useAVLStore()
+
+  const [inputMode, setInputMode] = useState<'preset' | 'custom'>('preset')
+  const [csvInput, setCsvInput] = useState('')
 
   const parsed = parseInt(inputValue, 10)
   const hasValue = !isNaN(parsed)
@@ -20,35 +24,75 @@ export function AVLControls() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <label className="text-sm text-[#a78bde]">Value</label>
-        <input
-          type="number"
-          value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
-          onKeyDown={onKey}
-          placeholder="e.g. 25"
-          disabled={isAnimating}
-          className={inputClass}
-        />
+      {/* Preset / Custom toggle */}
+      <div className="flex gap-1 bg-[#1a1428] rounded-md p-0.5">
+        {(['preset', 'custom'] as const).map(m => (
+          <button
+            key={m}
+            onClick={() => setInputMode(m)}
+            className={cn(
+              'flex-1 h-7 rounded text-xs font-medium capitalize transition-all duration-150',
+              inputMode === m ? 'bg-[#744cae] text-white' : 'text-[#6b4d8a] hover:text-[#a78bde]',
+            )}
+          >
+            {m}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Btn onClick={() => hasValue && !isAnimating && insert(parsed)} disabled={!hasValue || isAnimating} variant="primary">
-          Insert
-        </Btn>
-        <Btn onClick={() => hasValue && !isAnimating && !isEmpty && deleteAVL(parsed)} disabled={!hasValue || isAnimating || isEmpty} variant="danger">
-          Delete
-        </Btn>
-        <Btn onClick={() => hasValue && !isAnimating && !isEmpty && search(parsed)} disabled={!hasValue || isAnimating || isEmpty} variant="active">
-          Search
-        </Btn>
-      </div>
+      {inputMode === 'custom' ? (
+        <div className="space-y-2">
+          <label className="text-xs text-[#a78bde]">Comma-separated integers</label>
+          <input
+            type="text"
+            value={csvInput}
+            onChange={e => setCsvInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !isAnimating) { loadFromCSV(csvInput); setCsvInput('') } }}
+            placeholder="e.g. 30,15,50,10,20"
+            disabled={isAnimating}
+            className={inputClass}
+          />
+          <Btn
+            onClick={() => { loadFromCSV(csvInput); setCsvInput('') }}
+            disabled={isAnimating || csvInput.trim() === ''}
+            variant="primary"
+          >
+            Load
+          </Btn>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-1.5">
+            <label className="text-sm text-[#a78bde]">Value</label>
+            <input
+              type="number"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              onKeyDown={onKey}
+              placeholder="e.g. 25"
+              disabled={isAnimating}
+              className={inputClass}
+            />
+          </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Btn onClick={() => !isAnimating && reset()} disabled={isAnimating} variant="neutral">Reset</Btn>
-        <Btn onClick={() => !isAnimating && !isEmpty && clear()} disabled={isAnimating || isEmpty} variant="danger">Clear</Btn>
-      </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Btn onClick={() => hasValue && !isAnimating && insert(parsed)} disabled={!hasValue || isAnimating} variant="primary">
+              Insert
+            </Btn>
+            <Btn onClick={() => hasValue && !isAnimating && !isEmpty && deleteAVL(parsed)} disabled={!hasValue || isAnimating || isEmpty} variant="danger">
+              Delete
+            </Btn>
+            <Btn onClick={() => hasValue && !isAnimating && !isEmpty && search(parsed)} disabled={!hasValue || isAnimating || isEmpty} variant="active">
+              Search
+            </Btn>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Btn onClick={() => !isAnimating && reset()} disabled={isAnimating} variant="neutral">Reset</Btn>
+            <Btn onClick={() => !isAnimating && !isEmpty && clear()} disabled={isAnimating || isEmpty} variant="danger">Clear</Btn>
+          </div>
+        </>
+      )}
 
       <div className="flex items-center gap-2 pt-1">
         <span className="text-xs text-[#6b4d8a]">Speed:</span>

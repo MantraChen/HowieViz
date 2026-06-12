@@ -35,6 +35,8 @@ export interface FWSnap {
   done: boolean
 }
 
+type Step = { time: string; text: string }
+
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 700, normal: 300, fast: 80 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -44,6 +46,10 @@ function cancelAnim() {
   animTimers.forEach(clearTimeout)
   animTimers = []
   animGen++
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 // 5 nodes, directed, non-negative, interesting paths
@@ -202,11 +208,20 @@ interface FloydWarshallStore {
   done: boolean
   isAnimating: boolean
   speed: AnimationSpeed
+  snaps: FWSnap[]
+  snapIndex: number
+  statusText: string
+  steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
   run: () => void
   reset: () => void
   updateNodePosition: (id: string, x: number, y: number) => void
+  clearSteps: () => void
+  prepareSnaps: () => void
+  stepForward: () => void
+  stepBack: () => void
+  loadFromJSON: (json: string) => void
 }
 
 function scheduleSnaps(snaps: FWSnap[], delay: number) {
@@ -215,7 +230,13 @@ function scheduleSnaps(snaps: FWSnap[], delay: number) {
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      useFloydWarshallStore.setState({
+      const isLast = i === snaps.length - 1
+      const text = snap.done
+        ? 'All-pairs complete'
+        : snap.k >= 0 && snap.i >= 0 && snap.j >= 0
+        ? `Pass k=${snap.k + 1}, checking (${snap.i + 1},${snap.j + 1})`
+        : 'Initialized'
+      useFloydWarshallStore.setState(prev => ({
         nodes: snap.nodes,
         edges: snap.edges,
         dist: snap.dist,
@@ -224,8 +245,10 @@ function scheduleSnaps(snaps: FWSnap[], delay: number) {
         i: snap.i,
         j: snap.j,
         done: snap.done,
-        isAnimating: i < snaps.length - 1,
-      })
+        isAnimating: !isLast,
+        statusText: isLast ? 'All-pairs shortest paths complete' : text,
+        steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
+      }))
     }, i * delay)
     animTimers.push(t)
   })
@@ -252,6 +275,10 @@ export const useFloydWarshallStore = create<FloydWarshallStore>((set, get) => ({
   done: false,
   isAnimating: false,
   speed: 'normal',
+  snaps: [],
+  snapIndex: -1,
+  statusText: 'Ready.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
 
@@ -260,7 +287,9 @@ export const useFloydWarshallStore = create<FloydWarshallStore>((set, get) => ({
     const { nodes, edges, nodeOrder, speed } = get()
     const rn: Record<string, FWNode> = {}
     for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
-    scheduleSnaps(computeFloydWarshall(rn, edges, nodeOrder), SPEED_DELAY[speed])
+    const computed = computeFloydWarshall(rn, edges, nodeOrder)
+    set({ snaps: computed, snapIndex: -1, steps: [], statusText: 'Running Floyd-Warshall…' })
+    scheduleSnaps(computed, SPEED_DELAY[speed])
   },
 
   reset: () => {
@@ -283,9 +312,137 @@ export const useFloydWarshallStore = create<FloydWarshallStore>((set, get) => ({
       nodeCount: n,
       done: false,
       isAnimating: false,
+      snaps: [],
+      snapIndex: -1,
+      statusText: 'Ready.',
+      steps: [],
     })
   },
 
   updateNodePosition: (id, x, y) =>
     set(s => ({ nodes: { ...s.nodes, [id]: { ...s.nodes[id], x, y } } })),
+
+  clearSteps: () => set({ steps: [] }),
+
+  prepareSnaps: () => {
+    cancelAnim()
+    const { nodes, edges, nodeOrder } = get()
+    const rn: Record<string, FWNode> = {}
+    for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
+    const computed = computeFloydWarshall(rn, edges, nodeOrder)
+    const first = computed[0]
+    set({
+      snaps: computed,
+      snapIndex: 0,
+      nodes: first.nodes,
+      edges: first.edges,
+      dist: first.dist,
+      cellHL: first.cellHL,
+      k: first.k,
+      i: first.i,
+      j: first.j,
+      nodeCount: first.nodeCount,
+      done: first.done,
+      isAnimating: false,
+      steps: [],
+      statusText: `Step 1 / ${computed.length}`,
+    })
+  },
+
+  stepForward: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex >= snaps.length - 1) return
+    const newIdx = snapIndex + 1
+    const snap = snaps[newIdx]
+    const text = snap.done
+      ? 'All-pairs complete'
+      : snap.k >= 0 && snap.i >= 0 && snap.j >= 0
+      ? `k=${snap.k + 1} i=${snap.i + 1} j=${snap.j + 1}`
+      : 'Initialized'
+    set(prev => ({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      dist: snap.dist,
+      cellHL: snap.cellHL,
+      k: snap.k,
+      i: snap.i,
+      j: snap.j,
+      nodeCount: snap.nodeCount,
+      done: snap.done,
+      statusText: text,
+      steps: [...prev.steps, { time: nowTime(), text }],
+    }))
+  },
+
+  stepBack: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex <= 0) return
+    const newIdx = snapIndex - 1
+    const snap = snaps[newIdx]
+    set({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      dist: snap.dist,
+      cellHL: snap.cellHL,
+      k: snap.k,
+      i: snap.i,
+      j: snap.j,
+      nodeCount: snap.nodeCount,
+      done: snap.done,
+      statusText: `Step ${newIdx + 1} / ${snaps.length}`,
+    })
+  },
+
+  loadFromJSON: (json: string) => {
+    try {
+      const data = JSON.parse(json)
+      const nodeLabels: string[] = (data.nodes ?? []).map((n: unknown) => String(n))
+      const edgeTuples: [string, string, number][] = (data.edges ?? []).map((e: unknown[]) => [String(e[0]), String(e[1]), Number(e[2] ?? 1)])
+      cancelAnim()
+      const newNodes: Record<string, FWNode> = {}
+      const labelToId: Record<string, string> = {}
+      const newNodeOrder: string[] = []
+      nodeLabels.forEach((label, i) => {
+        const id = nanoid()
+        const angle = (2 * Math.PI * i) / nodeLabels.length
+        const cx = 150, cy = 150, r = 120
+        newNodes[id] = { id, label, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), highlight: 'default' }
+        labelToId[label] = id
+        newNodeOrder.push(id)
+      })
+      const newEdges: Record<string, FWEdge> = {}
+      for (const [from, to, weight] of edgeTuples) {
+        if (labelToId[from] && labelToId[to] && labelToId[from] !== labelToId[to]) {
+          const edge: FWEdge = { id: nanoid(), from: labelToId[from], to: labelToId[to], weight, highlight: 'default' }
+          newEdges[edge.id] = edge
+        }
+      }
+      const n = newNodeOrder.length
+      const emptyDist = Array.from({ length: n }, (_, i) =>
+        Array.from({ length: n }, (__, j) => (i === j ? 0 : Infinity)),
+      )
+      const emptyHL = Array.from({ length: n }, (_, i) =>
+        Array.from({ length: n }, (__, j) => (i === j ? 'diagonal' : 'default') as FWCellHL),
+      )
+      set({
+        nodes: newNodes,
+        edges: newEdges,
+        nodeOrder: newNodeOrder,
+        dist: emptyDist,
+        cellHL: emptyHL,
+        k: -1, i: -1, j: -1,
+        nodeCount: n,
+        done: false,
+        isAnimating: false,
+        snaps: [],
+        snapIndex: -1,
+        statusText: 'Graph loaded from JSON.',
+        steps: [],
+      })
+    } catch {
+      // ignore bad JSON
+    }
+  },
 }))

@@ -29,6 +29,8 @@ interface PrimSnap {
   done: boolean
 }
 
+type Step = { time: string; text: string }
+
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 900, normal: 450, fast: 180 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -38,6 +40,10 @@ function cancelAnim() {
   animTimers.forEach(clearTimeout)
   animTimers = []
   animGen++
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 // 6 nodes, undirected weighted graph
@@ -189,12 +195,21 @@ interface PrimsStore {
   isAnimating: boolean
   speed: AnimationSpeed
   startNode: string
+  snaps: PrimSnap[]
+  snapIndex: number
+  statusText: string
+  steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
   setStartNode: (v: string) => void
   run: () => void
   reset: () => void
   updateNodePosition: (id: string, x: number, y: number) => void
+  clearSteps: () => void
+  prepareSnaps: (startLabel: string) => void
+  stepForward: () => void
+  stepBack: () => void
+  loadFromJSON: (json: string) => void
 }
 
 function scheduleSnaps(snaps: PrimSnap[], delay: number) {
@@ -203,14 +218,20 @@ function scheduleSnaps(snaps: PrimSnap[], delay: number) {
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      usePrimsStore.setState({
+      const isLast = i === snaps.length - 1
+      const text = snap.done
+        ? `MST complete — total weight ${snap.mstWeight}`
+        : `MST has ${snap.mstEdgeCount} edge(s), weight ${snap.mstWeight}`
+      usePrimsStore.setState(prev => ({
         nodes: snap.nodes,
         edges: snap.edges,
         mstWeight: snap.mstWeight,
         mstEdgeCount: snap.mstEdgeCount,
         done: snap.done,
-        isAnimating: i < snaps.length - 1,
-      })
+        isAnimating: !isLast,
+        statusText: isLast ? `MST complete — total weight ${snap.mstWeight}` : text,
+        steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
+      }))
     }, i * delay)
     animTimers.push(t)
   })
@@ -225,6 +246,10 @@ export const usePrimsStore = create<PrimsStore>((set, get) => ({
   isAnimating: false,
   speed: 'normal',
   startNode: '1',
+  snaps: [],
+  snapIndex: -1,
+  statusText: 'Ready.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
   setStartNode: v => set({ startNode: v }),
@@ -238,15 +263,108 @@ export const usePrimsStore = create<PrimsStore>((set, get) => ({
     for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
     const re: Record<string, PrimEdge> = {}
     for (const id in edges) re[id] = { ...edges[id], highlight: 'default' }
-    scheduleSnaps(computePrims(rn, re, startId), SPEED_DELAY[speed])
+    const computed = computePrims(rn, re, startId)
+    set({ snaps: computed, snapIndex: -1, steps: [], statusText: "Running Prim's…" })
+    scheduleSnaps(computed, SPEED_DELAY[speed])
   },
 
   reset: () => {
     cancelAnim()
     const fresh = buildDefaultGraph()
-    set({ ...fresh, mstWeight: 0, mstEdgeCount: 0, done: false, isAnimating: false, startNode: '1' })
+    set({ ...fresh, mstWeight: 0, mstEdgeCount: 0, done: false, isAnimating: false, startNode: '1', snaps: [], snapIndex: -1, statusText: 'Ready.', steps: [] })
   },
 
   updateNodePosition: (id, x, y) =>
     set(s => ({ nodes: { ...s.nodes, [id]: { ...s.nodes[id], x, y } } })),
+
+  clearSteps: () => set({ steps: [] }),
+
+  prepareSnaps: (startLabel: string) => {
+    cancelAnim()
+    const { nodes, edges } = get()
+    const startId = findNodeByLabel(nodes, startLabel)
+    if (!startId) return
+    const rn: Record<string, PrimNode> = {}
+    for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
+    const re: Record<string, PrimEdge> = {}
+    for (const id in edges) re[id] = { ...edges[id], highlight: 'default' }
+    const computed = computePrims(rn, re, startId)
+    const first = computed[0]
+    set({
+      snaps: computed,
+      snapIndex: 0,
+      nodes: first.nodes,
+      edges: first.edges,
+      mstWeight: first.mstWeight,
+      mstEdgeCount: first.mstEdgeCount,
+      done: first.done,
+      isAnimating: false,
+      steps: [],
+      statusText: `Step 1 / ${computed.length}`,
+    })
+  },
+
+  stepForward: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex >= snaps.length - 1) return
+    const newIdx = snapIndex + 1
+    const snap = snaps[newIdx]
+    const text = snap.done
+      ? `MST complete — total weight ${snap.mstWeight}`
+      : `MST has ${snap.mstEdgeCount} edge(s), weight ${snap.mstWeight}`
+    set(prev => ({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      mstWeight: snap.mstWeight,
+      mstEdgeCount: snap.mstEdgeCount,
+      done: snap.done,
+      statusText: text,
+      steps: [...prev.steps, { time: nowTime(), text }],
+    }))
+  },
+
+  stepBack: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex <= 0) return
+    const newIdx = snapIndex - 1
+    const snap = snaps[newIdx]
+    set({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      mstWeight: snap.mstWeight,
+      mstEdgeCount: snap.mstEdgeCount,
+      done: snap.done,
+      statusText: `Step ${newIdx + 1} / ${snaps.length}`,
+    })
+  },
+
+  loadFromJSON: (json: string) => {
+    try {
+      const data = JSON.parse(json)
+      const nodeLabels: string[] = (data.nodes ?? []).map((n: unknown) => String(n))
+      const edgeTuples: [string, string, number][] = (data.edges ?? []).map((e: unknown[]) => [String(e[0]), String(e[1]), Number(e[2] ?? 1)])
+      cancelAnim()
+      const newNodes: Record<string, PrimNode> = {}
+      const labelToId: Record<string, string> = {}
+      nodeLabels.forEach((label, i) => {
+        const id = nanoid()
+        const angle = (2 * Math.PI * i) / nodeLabels.length
+        const cx = 270, cy = 220, r = 160
+        newNodes[id] = { id, label, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), highlight: 'default' }
+        labelToId[label] = id
+      })
+      const newEdges: Record<string, PrimEdge> = {}
+      for (const [from, to, weight] of edgeTuples) {
+        if (labelToId[from] && labelToId[to] && labelToId[from] !== labelToId[to]) {
+          const edge: PrimEdge = { id: nanoid(), from: labelToId[from], to: labelToId[to], weight, highlight: 'default' }
+          newEdges[edge.id] = edge
+        }
+      }
+      set({ nodes: newNodes, edges: newEdges, mstWeight: 0, mstEdgeCount: 0, done: false, isAnimating: false, snaps: [], snapIndex: -1, statusText: 'Graph loaded from JSON.', steps: [] })
+    } catch {
+      // ignore bad JSON
+    }
+  },
 }))

@@ -27,6 +27,8 @@ interface Snap {
   traversalOrder: string[]
 }
 
+type Step = { time: string; text: string }
+
 const SPEED_DELAY: Record<AnimationSpeed, number> = {
   slow: 800,
   normal: 400,
@@ -42,6 +44,10 @@ function cancelAnim() {
   animTimers.forEach(clearTimeout)
   animTimers = []
   animGen++
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 function buildDefaultGraph(): { nodes: Record<string, GraphNode>; edges: Record<string, GraphEdge> } {
@@ -221,6 +227,10 @@ interface GraphStore {
   fromNodeInput: string
   toNodeInput: string
   removeNodeInput: string
+  snaps: Snap[]
+  snapIndex: number
+  statusText: string
+  steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
   setStartNode: (v: string) => void
@@ -240,6 +250,12 @@ interface GraphStore {
   reset: () => void
 
   updateNodePosition: (id: string, x: number, y: number) => void
+
+  clearSteps: () => void
+  prepareSnaps: (startLabel: string, type: 'BFS' | 'DFS') => void
+  stepForward: () => void
+  stepBack: () => void
+  loadFromJSON: (json: string) => void
 }
 
 function scheduleSnapshots(snapshots: Snap[], delay: number) {
@@ -248,12 +264,17 @@ function scheduleSnapshots(snapshots: Snap[], delay: number) {
   snapshots.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      useGraphStore.setState({
+      const lastLabel = snap.traversalOrder[snap.traversalOrder.length - 1] ?? ''
+      const text = lastLabel ? `Visited node ${lastLabel}` : 'Done'
+      const isLast = i === snapshots.length - 1
+      useGraphStore.setState(prev => ({
         nodes: snap.nodes,
         edges: snap.edges,
         traversalOrder: snap.traversalOrder,
-        isAnimating: i < snapshots.length - 1,
-      })
+        isAnimating: !isLast,
+        statusText: isLast ? `Done — ${snap.traversalOrder.length} nodes visited` : text,
+        steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
+      }))
     }, i * delay)
     animTimers.push(t)
   })
@@ -271,6 +292,10 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   fromNodeInput: '',
   toNodeInput: '',
   removeNodeInput: '',
+  snaps: [],
+  snapIndex: -1,
+  statusText: 'Ready.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
   setStartNode: v => set({ startNode: v }),
@@ -322,9 +347,9 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     const startId = findNodeByLabel(nodes, startLabel)
     if (!startId) return
     const { nodes: n, edges: e } = resetHighlights(nodes, edges)
-    const snapshots = computeBFS(n, e, startId)
-    set({ traversalType: 'BFS' })
-    scheduleSnapshots(snapshots, SPEED_DELAY[speed])
+    const computed = computeBFS(n, e, startId)
+    set({ traversalType: 'BFS', snaps: computed, snapIndex: -1, steps: [], statusText: 'Running…' })
+    scheduleSnapshots(computed, SPEED_DELAY[speed])
   },
 
   runDFS: (startLabel: string) => {
@@ -333,9 +358,9 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     const startId = findNodeByLabel(nodes, startLabel)
     if (!startId) return
     const { nodes: n, edges: e } = resetHighlights(nodes, edges)
-    const snapshots = computeDFS(n, e, startId)
-    set({ traversalType: 'DFS' })
-    scheduleSnapshots(snapshots, SPEED_DELAY[speed])
+    const computed = computeDFS(n, e, startId)
+    set({ traversalType: 'DFS', snaps: computed, snapIndex: -1, steps: [], statusText: 'Running…' })
+    scheduleSnapshots(computed, SPEED_DELAY[speed])
   },
 
   clear: () => {
@@ -353,10 +378,96 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       traversalType: null,
       isAnimating: false,
       startNode: '1',
+      snaps: [],
+      snapIndex: -1,
+      statusText: 'Ready.',
+      steps: [],
     })
   },
 
   updateNodePosition: (id: string, x: number, y: number) => {
     set(s => ({ nodes: { ...s.nodes, [id]: { ...s.nodes[id], x, y } } }))
+  },
+
+  clearSteps: () => set({ steps: [] }),
+
+  prepareSnaps: (startLabel: string, type: 'BFS' | 'DFS') => {
+    cancelAnim()
+    const { nodes, edges } = get()
+    const startId = findNodeByLabel(nodes, startLabel)
+    if (!startId) return
+    const { nodes: n, edges: e } = resetHighlights(nodes, edges)
+    const computed = type === 'BFS' ? computeBFS(n, e, startId) : computeDFS(n, e, startId)
+    const first = computed[0]
+    set({
+      snaps: computed,
+      snapIndex: 0,
+      traversalType: type,
+      nodes: first.nodes,
+      edges: first.edges,
+      traversalOrder: first.traversalOrder,
+      isAnimating: false,
+      steps: [],
+      statusText: `Step 1 / ${computed.length}`,
+    })
+  },
+
+  stepForward: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex >= snaps.length - 1) return
+    const newIdx = snapIndex + 1
+    const snap = snaps[newIdx]
+    const lastLabel = snap.traversalOrder[snap.traversalOrder.length - 1] ?? ''
+    const text = lastLabel ? `Visited node ${lastLabel}` : 'Done'
+    set(prev => ({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      traversalOrder: snap.traversalOrder,
+      statusText: text,
+      steps: [...prev.steps, { time: nowTime(), text }],
+    }))
+  },
+
+  stepBack: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex <= 0) return
+    const newIdx = snapIndex - 1
+    const snap = snaps[newIdx]
+    set({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      traversalOrder: snap.traversalOrder,
+      statusText: `Step ${newIdx + 1} / ${snaps.length}`,
+    })
+  },
+
+  loadFromJSON: (json: string) => {
+    try {
+      const data = JSON.parse(json)
+      const nodeLabels: string[] = (data.nodes ?? []).map((n: unknown) => String(n))
+      const edgePairs: [string, string][] = (data.edges ?? []).map((e: unknown[]) => [String(e[0]), String(e[1])])
+      cancelAnim()
+      const newNodes: Record<string, GraphNode> = {}
+      const labelToId: Record<string, string> = {}
+      nodeLabels.forEach((label, i) => {
+        const id = nanoid()
+        const angle = (2 * Math.PI * i) / nodeLabels.length
+        const cx = 270, cy = 200, r = 140
+        newNodes[id] = { id, label, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), highlight: 'default', visitOrder: null }
+        labelToId[label] = id
+      })
+      const newEdges: Record<string, GraphEdge> = {}
+      for (const [from, to] of edgePairs) {
+        if (labelToId[from] && labelToId[to] && labelToId[from] !== labelToId[to]) {
+          const edge: GraphEdge = { id: nanoid(), from: labelToId[from], to: labelToId[to], highlight: 'default' }
+          newEdges[edge.id] = edge
+        }
+      }
+      set({ nodes: newNodes, edges: newEdges, traversalOrder: [], traversalType: null, isAnimating: false, snaps: [], snapIndex: -1, statusText: 'Graph loaded from JSON.' })
+    } catch {
+      // ignore bad JSON
+    }
   },
 }))

@@ -25,6 +25,10 @@ function cancelAnim() {
   animGen++
 }
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 const DEFAULT_ARR = [1, 3, 5, 7, 9, 11]
 const SPEED_DELAY = { slow: 700, normal: 350, fast: 130 }
 
@@ -53,17 +57,19 @@ function resetHL(nodes: Record<number, STNode>): Record<number, STNode> {
   return copy
 }
 
-function scheduleSnaps(snaps: STSnap[], delay: number) {
+function scheduleSnaps(snaps: STSnap[], delay: number, finalStatus: string) {
   const gen = ++animGen
   useSTStore.setState({ isAnimating: true })
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
+      const isLast = i === snaps.length - 1
       useSTStore.setState({
         nodes: snap.nodes,
         message: snap.message,
         resultSum: snap.resultSum,
-        isAnimating: i < snaps.length - 1,
+        isAnimating: !isLast,
+        ...(isLast ? { statusText: finalStatus } : {}),
       })
     }, i * delay)
     animTimers.push(t)
@@ -81,6 +87,8 @@ interface STStore {
   queryR: string
   updateIdx: string
   updateVal: string
+  statusText: string
+  steps: { time: string; text: string }[]
 
   setSpeed: (s: 'slow' | 'normal' | 'fast') => void
   setQueryL: (v: string) => void
@@ -90,6 +98,8 @@ interface STStore {
   query: (l: number, r: number) => void
   update: (idx: number, val: number) => void
   reset: () => void
+  clearSteps: () => void
+  loadFromCSV: (csv: string) => void
 }
 
 export const useSTStore = create<STStore>((set, get) => ({
@@ -103,16 +113,19 @@ export const useSTStore = create<STStore>((set, get) => ({
   queryR: '',
   updateIdx: '',
   updateVal: '',
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
   setQueryL: v => set({ queryL: v }),
   setQueryR: v => set({ queryR: v }),
   setUpdateIdx: v => set({ updateIdx: v }),
   setUpdateVal: v => set({ updateVal: v }),
+  clearSteps: () => set({ steps: [] }),
 
   query: (ql: number, qr: number) => {
     cancelAnim()
-    const { nodes: rawNodes, arr, speed } = get()
+    const { nodes: rawNodes, arr, speed, steps } = get()
     const n = arr.length
     if (ql < 0 || qr >= n || ql > qr) return
 
@@ -152,12 +165,14 @@ export const useSTStore = create<STStore>((set, get) => ({
 
     const done = resetHL(nodes)
     snaps.push({ nodes: done, message: `Query [${ql},${qr}] = ${total}`, resultSum: total })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+
+    set({ steps: [...steps, { time: nowTime(), text: `Query [${ql},${qr}] = ${total}` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Query [${ql},${qr}] = ${total}`)
   },
 
   update: (qi: number, val: number) => {
     cancelAnim()
-    const { nodes: rawNodes, arr, speed } = get()
+    const { nodes: rawNodes, arr, speed, steps } = get()
     const n = arr.length
     if (qi < 0 || qi >= n) return
 
@@ -194,12 +209,21 @@ export const useSTStore = create<STStore>((set, get) => ({
 
     const done = resetHL(nodes)
     snaps.push({ nodes: done, message: `arr[${qi}] updated to ${val}`, resultSum: null })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+
+    set({ steps: [...steps, { time: nowTime(), text: `Update: arr[${qi}] = ${val}` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Updated arr[${qi}] = ${val}`)
     set({ arr: newArr })
   },
 
   reset: () => {
     cancelAnim()
-    set({ arr: [...DEFAULT_ARR], nodes: buildTree(DEFAULT_ARR), message: '', resultSum: null, isAnimating: false })
+    set({ arr: [...DEFAULT_ARR], nodes: buildTree(DEFAULT_ARR), message: '', resultSum: null, isAnimating: false, statusText: 'Reset to default array.' })
+  },
+
+  loadFromCSV: (csv: string) => {
+    cancelAnim()
+    const vals = csv.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+    if (vals.length === 0) return
+    set({ arr: vals, nodes: buildTree(vals), message: '', resultSum: null, isAnimating: false, statusText: `Loaded array of length ${vals.length}` })
   },
 }))

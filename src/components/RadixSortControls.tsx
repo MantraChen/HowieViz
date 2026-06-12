@@ -1,43 +1,141 @@
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRadixSortStore } from '@/store/radixSortStore'
 import { cn } from '@/lib/utils'
 
-export function RadixSortControls() {
-  const { arraySize, speed, isAnimating, isSorted, setArraySize, setSpeed, randomize, sort, reset } =
-    useRadixSortStore()
+interface Props {
+  mode?: string
+}
+
+export function RadixSortControls({ mode = 'visualize' }: Props) {
+  const store = useRadixSortStore()
+  const { arraySize, speed, isAnimating, isSorted, setArraySize, setSpeed, randomize, sort, reset } = store
+  const [inputMode, setInputMode] = useState<'preset' | 'custom'>('preset')
+  const [customText, setCustomText] = useState('')
+
+  const isManual = mode === 'manual'
+  const snapsLength = store.snaps.length
+  const snapIndex = store.snapIndex
+
+  function handleLoadCustom() {
+    if (customText.trim()) {
+      store.loadCustom(customText)
+    }
+  }
 
   return (
     <div className="space-y-5">
-      {/* Array size */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label className="text-sm text-[#a78bde]">Array Size</label>
-          <span className="text-sm font-mono text-[#c9a0ff] font-semibold">{arraySize}</span>
+      {/* Input mode toggle */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1 bg-[#1a1428] rounded-lg p-1">
+          <button
+            onClick={() => setInputMode('preset')}
+            className={cn(
+              'flex-1 h-7 rounded-md text-xs font-medium transition-all duration-150',
+              inputMode === 'preset' ? 'bg-[#744cae] text-white' : 'text-[#6b4d8a] hover:text-[#a78bde]',
+            )}
+          >
+            Preset
+          </button>
+          <button
+            onClick={() => setInputMode('custom')}
+            className={cn(
+              'flex-1 h-7 rounded-md text-xs font-medium transition-all duration-150',
+              inputMode === 'custom' ? 'bg-[#744cae] text-white' : 'text-[#6b4d8a] hover:text-[#a78bde]',
+            )}
+          >
+            Custom
+          </button>
         </div>
-        <input
-          type="range"
-          min={5}
-          max={20}
-          value={arraySize}
-          onChange={e => !isAnimating && setArraySize(Number(e.target.value))}
-          disabled={isAnimating}
-          className="w-full h-1.5 rounded-full appearance-none bg-[#2a1f3d] accent-[#744cae] disabled:opacity-40 cursor-pointer"
-        />
-        <div className="flex justify-between">
-          <span className="text-[10px] text-[#3d2d5a] font-mono">5</span>
-          <span className="text-[10px] text-[#3d2d5a] font-mono">20</span>
-        </div>
+
+        {inputMode === 'preset' ? (
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-[#a78bde]">Array Size</label>
+              <span className="text-sm font-mono text-[#c9a0ff] font-semibold">{arraySize}</span>
+            </div>
+            <input
+              type="range"
+              min={5}
+              max={20}
+              value={arraySize}
+              onChange={e => !isAnimating && setArraySize(Number(e.target.value))}
+              disabled={isAnimating}
+              className="w-full h-1.5 rounded-full appearance-none bg-[#2a1f3d] accent-[#744cae] disabled:opacity-40 cursor-pointer"
+            />
+            <div className="flex justify-between">
+              <span className="text-[10px] text-[#3d2d5a] font-mono">5</span>
+              <span className="text-[10px] text-[#3d2d5a] font-mono">20</span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <textarea
+              value={customText}
+              onChange={e => setCustomText(e.target.value)}
+              placeholder="34, 72, 15, 88, 21, 56"
+              rows={2}
+              className="w-full rounded-md bg-[#1a1428] border border-[#2a1f3d] text-[#a78bde] text-xs font-mono px-3 py-2 placeholder-[#3d2d5a] focus:outline-none focus:border-[#744cae] resize-none"
+            />
+            <p className="text-[10px] text-[#3d2d5a]">Comma-separated integers (10–99, max 20)</p>
+            <Btn onClick={handleLoadCustom} disabled={isAnimating || !customText.trim()} variant="neutral" full>
+              Load
+            </Btn>
+          </div>
+        )}
       </div>
 
       {/* Buttons */}
-      <div className="space-y-2">
-        <div className="grid grid-cols-2 gap-2">
-          <Btn onClick={randomize} disabled={isAnimating} variant="neutral">Randomize</Btn>
-          <Btn onClick={reset} disabled={isAnimating} variant="neutral">Reset</Btn>
+      {isManual ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Btn onClick={randomize} disabled={isAnimating} variant="neutral">Randomize</Btn>
+            <Btn onClick={reset} disabled={isAnimating} variant="neutral">Reset</Btn>
+          </div>
+          {snapsLength === 0 ? (
+            <Btn onClick={store.prepareSnaps} disabled={isAnimating} variant="primary" full>
+              Prepare Steps
+            </Btn>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={store.stepBack}
+                disabled={snapIndex <= 0}
+                className={cn(
+                  'h-10 flex items-center justify-center gap-1.5 rounded-md border text-sm font-medium transition-all duration-200',
+                  'bg-transparent hover:bg-[#1e1630] border-[#2a1f3d] hover:border-[#3d2d5a] text-[#6b4d8a] hover:text-[#a78bde]',
+                  snapIndex <= 0 && 'opacity-30 cursor-not-allowed pointer-events-none',
+                )}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Prev
+              </button>
+              <button
+                onClick={store.stepForward}
+                disabled={snapIndex >= snapsLength - 1}
+                className={cn(
+                  'h-10 flex items-center justify-center gap-1.5 rounded-md border text-sm font-medium transition-all duration-200',
+                  'bg-[#744cae]/20 hover:bg-[#744cae] border-[#744cae]/50 text-[#d4a8ff] hover:text-white hover:shadow-[0_0_12px_rgba(180,130,232,0.4)]',
+                  snapIndex >= snapsLength - 1 && 'opacity-30 cursor-not-allowed pointer-events-none',
+                )}
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
-        <Btn onClick={sort} disabled={isAnimating || isSorted} variant="primary" full>
-          {isAnimating ? 'Sorting…' : isSorted ? 'Sorted ✓' : 'Sort'}
-        </Btn>
-      </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Btn onClick={randomize} disabled={isAnimating} variant="neutral">Randomize</Btn>
+            <Btn onClick={reset} disabled={isAnimating} variant="neutral">Reset</Btn>
+          </div>
+          <Btn onClick={sort} disabled={isAnimating || isSorted} variant="primary" full>
+            {isAnimating ? 'Sorting…' : isSorted ? 'Sorted ✓' : 'Sort'}
+          </Btn>
+        </div>
+      )}
 
       {/* Speed */}
       <div className="flex items-center gap-2">

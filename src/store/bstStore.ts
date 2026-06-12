@@ -36,6 +36,10 @@ function cancelAnim() {
   animGen++
 }
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 function cloneNodes(nodes: NodeMap, hl: BSTHighlight = 'default'): NodeMap {
   const out: NodeMap = {}
   for (const id in nodes) out[id] = { ...nodes[id], highlight: hl }
@@ -117,16 +121,18 @@ function buildInitialTree(): { nodes: NodeMap; rootId: string | null } {
 
 const INITIAL = buildInitialTree()
 
-function scheduleSnapshots(snapshots: Snap[], delay: number) {
+function scheduleSnapshots(snapshots: Snap[], delay: number, finalStatus: string) {
   const gen = ++animGen
   useBSTStore.setState({ isAnimating: true })
   snapshots.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
+      const isLast = i === snapshots.length - 1
       useBSTStore.setState({
         nodes: snap.nodes,
         rootId: snap.rootId,
-        isAnimating: i < snapshots.length - 1,
+        isAnimating: !isLast,
+        ...(isLast ? { statusText: finalStatus } : {}),
       })
     }, i * delay)
     animTimers.push(t)
@@ -139,6 +145,8 @@ interface BSTStore {
   speed: AnimationSpeed
   inputValue: string
   isAnimating: boolean
+  statusText: string
+  steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   insert: (value: number) => void
@@ -146,6 +154,8 @@ interface BSTStore {
   search: (value: number) => void
   clear: () => void
   reset: () => void
+  clearSteps: () => void
+  loadFromCSV: (csv: string) => void
 }
 
 export const useBSTStore = create<BSTStore>((set, get) => ({
@@ -154,9 +164,12 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
   speed: 'normal',
   inputValue: '',
   isAnimating: false,
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setInputValue: v => set({ inputValue: v }),
   setSpeed: s => set({ speed: s }),
+  clearSteps: () => set({ steps: [] }),
 
   clear: () => {
     cancelAnim()
@@ -166,7 +179,7 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
     set({ isAnimating: true, nodes: cloneNodes(nodes, 'deleted') })
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      set({ nodes: {}, rootId: null, isAnimating: false })
+      set({ nodes: {}, rootId: null, isAnimating: false, statusText: 'Tree cleared.' })
     }, 650)
     animTimers.push(t)
   },
@@ -177,26 +190,27 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
     const gen = ++animGen
     if (Object.keys(cur).length === 0) {
       const fresh = buildInitialTree()
-      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false })
+      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false, statusText: 'Tree reset to default.' })
       return
     }
     set({ isAnimating: true, nodes: cloneNodes(cur, 'deleted') })
     const t = setTimeout(() => {
       if (animGen !== gen) return
       const fresh = buildInitialTree()
-      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false })
+      set({ nodes: fresh.nodes, rootId: fresh.rootId, isAnimating: false, statusText: 'Tree reset to default.' })
     }, 650)
     animTimers.push(t)
   },
 
   search: (value: number) => {
     cancelAnim()
-    const { nodes, rootId, speed } = get()
+    const { nodes, rootId, speed, steps } = get()
     if (rootId === null) return
     const delay = SPEED_DELAY[speed]
     const snapshots: Snap[] = []
     const visited: string[] = []
     let cur: string | null = rootId
+    let foundNode = false
 
     while (cur !== null) {
       const curId: string = cur
@@ -211,6 +225,7 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
         for (const id of visited.slice(0, -1)) foundSnap[id] = { ...foundSnap[id], highlight: 'traversing' }
         foundSnap[curId] = { ...foundSnap[curId], highlight: 'found' }
         snapshots.push({ nodes: foundSnap, rootId })
+        foundNode = true
         break
       } else if (value < node.value) {
         cur = node.left
@@ -228,17 +243,20 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
     }
 
     snapshots.push({ nodes: cloneNodes(nodes), rootId })
-    scheduleSnapshots(snapshots, delay)
+
+    const finalStatus = foundNode ? `Found ${value}` : `${value} not found`
+    const stepText = foundNode ? `Search: Found ${value} in tree` : `Search: ${value} not found`
+    set({ steps: [...steps, { time: nowTime(), text: stepText }] })
+    scheduleSnapshots(snapshots, delay, finalStatus)
   },
 
   insert: (value: number) => {
     cancelAnim()
-    const { nodes, rootId, speed } = get()
+    const { nodes, rootId, speed, steps } = get()
     if (countNodes(nodes, rootId) >= MAX_SIZE) return
     const delay = SPEED_DELAY[speed]
     const snapshots: Snap[] = []
 
-    // Find traversal path
     const path: string[] = []
     let cur: string | null = rootId
     let parentId: string | null = null
@@ -246,21 +264,19 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
 
     while (cur !== null) {
       const node = nodes[cur]
-      if (value === node.value) return // duplicate
+      if (value === node.value) return
       path.push(cur)
       parentId = cur
       if (value < node.value) { goLeft = true; cur = node.left }
       else { goLeft = false; cur = node.right }
     }
 
-    // Traversal animation
     for (let i = 0; i < path.length; i++) {
       const snap = cloneNodes(nodes)
       for (let j = 0; j <= i; j++) snap[path[j]] = { ...snap[path[j]], highlight: 'traversing' }
       snapshots.push({ nodes: snap, rootId })
     }
 
-    // Insert
     const newNode: BSTNode = { id: nanoid(), value, left: null, right: null, highlight: 'inserted' }
     const newNodes = { ...nodes, [newNode.id]: newNode }
     let newRootId = rootId
@@ -279,17 +295,17 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
     snapshots.push({ nodes: insertedSnap, rootId: newRootId })
     snapshots.push({ nodes: cloneNodes(newNodes), rootId: newRootId })
 
-    scheduleSnapshots(snapshots, delay)
+    set({ steps: [...steps, { time: nowTime(), text: `Insert: ${value} added to tree` }] })
+    scheduleSnapshots(snapshots, delay, `Inserted ${value}`)
   },
 
   deleteBST: (value: number) => {
     cancelAnim()
-    const { nodes, rootId, speed } = get()
+    const { nodes, rootId, speed, steps } = get()
     if (rootId === null) return
     const delay = SPEED_DELAY[speed]
     const snapshots: Snap[] = []
 
-    // Traverse to find node
     const visited: string[] = []
     let cur: string | null = rootId
     let found = false
@@ -313,21 +329,35 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
       if (lastId) lastSnap[lastId] = { ...lastSnap[lastId], highlight: 'notFound' }
       snapshots.push({ nodes: lastSnap, rootId })
       snapshots.push({ nodes: cloneNodes(nodes), rootId })
-      scheduleSnapshots(snapshots, delay)
+      set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} not found` }] })
+      scheduleSnapshots(snapshots, delay, `${value} not found`)
       return
     }
 
-    // Highlight target as deleted
     const delSnap = cloneNodes(nodes)
     const targetId = visited[visited.length - 1]
     for (const id of visited.slice(0, -1)) delSnap[id] = { ...delSnap[id], highlight: 'traversing' }
     delSnap[targetId] = { ...delSnap[targetId], highlight: 'deleted' }
     snapshots.push({ nodes: delSnap, rootId })
 
-    // Perform deletion
     const result = deleteRec(nodes, rootId, value)
     snapshots.push({ nodes: cloneNodes(result.nodes), rootId: result.nodeId })
 
-    scheduleSnapshots(snapshots, delay)
+    set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} removed from tree` }] })
+    scheduleSnapshots(snapshots, delay, `Deleted ${value}`)
+  },
+
+  loadFromCSV: (csv: string) => {
+    cancelAnim()
+    const vals = csv.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+    if (vals.length === 0) return
+    let n: NodeMap = {}
+    let r: string | null = null
+    for (const v of vals) {
+      const result = insertRaw(n, r, v)
+      n = result.nodes
+      r = result.rootId
+    }
+    set({ nodes: n, rootId: r, isAnimating: false, statusText: `Loaded ${vals.length} values` })
   },
 }))

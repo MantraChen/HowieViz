@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useHeapStore } from '@/store/heapStore'
 import { cn } from '@/lib/utils'
 
-export function HeapControls() {
+export function HeapControls({ mode: _mode }: { mode?: string }) {
   const {
     heap,
     inputValue,
@@ -17,7 +18,11 @@ export function HeapControls() {
     buildHeap,
     clear,
     reset,
+    loadFromCSV,
   } = useHeapStore()
+
+  const [inputMode, setInputMode] = useState<'preset' | 'custom'>('preset')
+  const [csvInput, setCsvInput] = useState('')
 
   const parsed = parseInt(inputValue, 10)
   const hasValue = !isNaN(parsed)
@@ -38,85 +43,125 @@ export function HeapControls() {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
-        <label className="text-sm text-[#a78bde]">Value</label>
-        <input
-          type="number"
-          value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && hasValue && !isAnimating && !isFull && insert(parsed)}
-          placeholder="e.g. 42"
-          disabled={isAnimating}
-          className={inputClass}
-        />
+      {/* Preset / Custom toggle */}
+      <div className="flex gap-1 bg-[#1a1428] rounded-md p-0.5">
+        {(['preset', 'custom'] as const).map(m => (
+          <button
+            key={m}
+            onClick={() => setInputMode(m)}
+            className={cn(
+              'flex-1 h-7 rounded text-xs font-medium capitalize transition-all duration-150',
+              inputMode === m ? 'bg-[#744cae] text-white' : 'text-[#6b4d8a] hover:text-[#a78bde]',
+            )}
+          >
+            {m}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <Btn
-          onClick={() => hasValue && !isAnimating && !isFull && insert(parsed)}
-          disabled={!hasValue || isAnimating || isFull}
-          variant="primary"
-        >
-          Insert
-        </Btn>
-        <Btn
-          onClick={() => !isEmpty && !isAnimating && extractMin()}
-          disabled={isEmpty || isAnimating}
-          variant="danger"
-        >
-          Extract
-        </Btn>
-        <Btn
-          onClick={() => !isEmpty && !isAnimating && peek()}
-          disabled={isEmpty || isAnimating}
-          variant="active"
-        >
-          Peek
-        </Btn>
-      </div>
-
-      {isFull && (
-        <p className="text-[10px] text-[#ff6b8a] font-mono">max size (64) reached</p>
-      )}
-
-      <div>
-        <p className="text-xs tracking-widest text-[#744cae] uppercase mb-2 mt-4">Build Heap</p>
-        <input
-          type="text"
-          value={buildInput}
-          onChange={e => setBuildInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && !isAnimating && handleBuild()}
-          placeholder="e.g. 9,3,7,1,4"
-          disabled={isAnimating}
-          className={inputClass}
-        />
-        <div className="mt-2">
+      {inputMode === 'custom' ? (
+        <div className="space-y-2">
+          <label className="text-xs text-[#a78bde]">Comma-separated integers</label>
+          <input
+            type="text"
+            value={csvInput}
+            onChange={e => setCsvInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !isAnimating) { loadFromCSV(csvInput); setCsvInput('') } }}
+            placeholder="e.g. 1,3,6,5,9,8"
+            disabled={isAnimating}
+            className={inputClass}
+          />
           <Btn
-            onClick={() => !isAnimating && handleBuild()}
-            disabled={isAnimating || buildInput.trim() === ''}
+            onClick={() => { loadFromCSV(csvInput); setCsvInput('') }}
+            disabled={isAnimating || csvInput.trim() === ''}
             variant="primary"
           >
-            Build Heap
+            Load
           </Btn>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="space-y-1.5">
+            <label className="text-sm text-[#a78bde]">Value</label>
+            <input
+              type="number"
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && hasValue && !isAnimating && !isFull && insert(parsed)}
+              placeholder="e.g. 42"
+              disabled={isAnimating}
+              className={inputClass}
+            />
+          </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Btn
-          onClick={() => !isAnimating && reset()}
-          disabled={isAnimating}
-          variant="neutral"
-        >
-          Reset
-        </Btn>
-        <Btn
-          onClick={() => !isAnimating && !isEmpty && clear()}
-          disabled={isAnimating || isEmpty}
-          variant="danger"
-        >
-          Clear
-        </Btn>
-      </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Btn
+              onClick={() => hasValue && !isAnimating && !isFull && insert(parsed)}
+              disabled={!hasValue || isAnimating || isFull}
+              variant="primary"
+            >
+              Insert
+            </Btn>
+            <Btn
+              onClick={() => !isEmpty && !isAnimating && extractMin()}
+              disabled={isEmpty || isAnimating}
+              variant="danger"
+            >
+              Extract
+            </Btn>
+            <Btn
+              onClick={() => !isEmpty && !isAnimating && peek()}
+              disabled={isEmpty || isAnimating}
+              variant="active"
+            >
+              Peek
+            </Btn>
+          </div>
+
+          {isFull && (
+            <p className="text-[10px] text-[#ff6b8a] font-mono">max size (64) reached</p>
+          )}
+
+          <div>
+            <p className="text-xs tracking-widest text-[#744cae] uppercase mb-2 mt-4">Build Heap</p>
+            <input
+              type="text"
+              value={buildInput}
+              onChange={e => setBuildInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !isAnimating && handleBuild()}
+              placeholder="e.g. 9,3,7,1,4"
+              disabled={isAnimating}
+              className={inputClass}
+            />
+            <div className="mt-2">
+              <Btn
+                onClick={() => !isAnimating && handleBuild()}
+                disabled={isAnimating || buildInput.trim() === ''}
+                variant="primary"
+              >
+                Build Heap
+              </Btn>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Btn
+              onClick={() => !isAnimating && reset()}
+              disabled={isAnimating}
+              variant="neutral"
+            >
+              Reset
+            </Btn>
+            <Btn
+              onClick={() => !isAnimating && !isEmpty && clear()}
+              disabled={isAnimating || isEmpty}
+              variant="danger"
+            >
+              Clear
+            </Btn>
+          </div>
+        </>
+      )}
 
       <div className="flex items-center gap-2 pt-1">
         <span className="text-xs text-[#6b4d8a]">Speed:</span>

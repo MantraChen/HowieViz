@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useArrayStore } from '@/store/arrayStore'
 import { cn } from '@/lib/utils'
 
-export function ArrayControls() {
+export function ArrayControls({ mode: _mode }: { mode?: string }) {
   const {
     elements,
     inputValue,
@@ -15,7 +16,12 @@ export function ArrayControls() {
     insert,
     remove,
     reset,
+    loadCustom,
   } = useArrayStore()
+
+  const [inputMode, setInputMode] = useState<'preset' | 'custom'>('preset')
+  const [customText, setCustomText] = useState('')
+  const [customError, setCustomError] = useState('')
 
   const MAX_SIZE = 64
   const parsedValue = parseInt(inputValue, 10)
@@ -27,8 +33,45 @@ export function ArrayControls() {
   const inputClass =
     'w-full h-10 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors'
 
+  function applyCustom() {
+    setCustomError('')
+    const vals = customText.split(',').map(s => parseInt(s.trim(), 10))
+    if (vals.some(isNaN) || vals.length === 0) {
+      setCustomError('Enter comma-separated integers, e.g. 5,3,8,1')
+      return
+    }
+    loadCustom(vals)
+    setCustomText('')
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex rounded-md overflow-hidden border border-[#2a1f3d] text-xs">
+        {(['preset', 'custom'] as const).map(m => (
+          <button key={m} onClick={() => { setInputMode(m); setCustomError('') }}
+            className={cn('flex-1 h-7 capitalize transition-all duration-150',
+              inputMode === m ? 'bg-[#744cae] text-white font-medium' : 'bg-[#0c0916] text-[#6b4d8a] hover:text-[#a78bde]')}>
+            {m}
+          </button>
+        ))}
+      </div>
+
+      {inputMode === 'custom' && (
+        <div className="space-y-2">
+          <input value={customText} onChange={e => { setCustomText(e.target.value); setCustomError('') }}
+            placeholder="e.g. 5,3,8,1,9"
+            className="w-full h-9 px-3 rounded-md bg-[#1a1428] border border-[#2a1f3d] text-sm text-[#f0eaf8] placeholder:text-[#3d2d5a] focus:outline-none focus:border-[#b892e8] transition-colors" />
+          {customError && <p className="text-[11px] text-[#ff6b8a] font-mono">{customError}</p>}
+          <button onClick={applyCustom} disabled={!customText.trim()}
+            className={cn('w-full h-9 rounded-md border text-sm font-medium transition-all duration-200',
+              'bg-[#744cae]/20 hover:bg-[#744cae] border-[#744cae]/50 text-[#d4a8ff] hover:text-white',
+              !customText.trim() && 'opacity-30 cursor-not-allowed pointer-events-none')}>
+            Load Values
+          </button>
+          <p className="text-[10px] text-[#3d2d5a]">Comma-separated integers</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="text-sm text-[#a78bde]">Value</label>

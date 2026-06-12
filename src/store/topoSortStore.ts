@@ -30,6 +30,8 @@ interface TopoSnap {
   done: boolean
 }
 
+type Step = { time: string; text: string }
+
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 900, normal: 450, fast: 180 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -39,6 +41,10 @@ function cancelAnim() {
   animTimers.forEach(clearTimeout)
   animTimers = []
   animGen++
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 // DAG: 7 nodes, 9 edges
@@ -186,11 +192,20 @@ interface TopoSortStore {
   done: boolean
   isAnimating: boolean
   speed: AnimationSpeed
+  snaps: TopoSnap[]
+  snapIndex: number
+  statusText: string
+  steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
   run: () => void
   reset: () => void
   updateNodePosition: (id: string, x: number, y: number) => void
+  clearSteps: () => void
+  prepareSnaps: () => void
+  stepForward: () => void
+  stepBack: () => void
+  loadFromJSON: (json: string) => void
 }
 
 function scheduleSnaps(snaps: TopoSnap[], delay: number) {
@@ -199,15 +214,27 @@ function scheduleSnaps(snaps: TopoSnap[], delay: number) {
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      useTopoSortStore.setState({
+      const isLast = i === snaps.length - 1
+      const text = snap.done && snap.cycleDetected
+        ? 'Cycle detected!'
+        : snap.done
+        ? `Done — order: ${snap.result.join('→')}`
+        : snap.result.length > 0
+        ? `Added node ${snap.result[snap.result.length - 1]} to order`
+        : 'Starting...'
+      useTopoSortStore.setState(prev => ({
         nodes: snap.nodes,
         edges: snap.edges,
         queue: snap.queue,
         result: snap.result,
         cycleDetected: snap.cycleDetected,
         done: snap.done,
-        isAnimating: i < snaps.length - 1,
-      })
+        isAnimating: !isLast,
+        statusText: isLast
+          ? snap.cycleDetected ? 'Done — cycle detected!' : `Done — order: ${snap.result.join('→')}`
+          : text,
+        steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
+      }))
     }, i * delay)
     animTimers.push(t)
   })
@@ -222,6 +249,10 @@ export const useTopoSortStore = create<TopoSortStore>((set, get) => ({
   done: false,
   isAnimating: false,
   speed: 'normal',
+  snaps: [],
+  snapIndex: -1,
+  statusText: 'Ready.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
 
@@ -232,15 +263,119 @@ export const useTopoSortStore = create<TopoSortStore>((set, get) => ({
     for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
     const re: Record<string, TopoEdge> = {}
     for (const id in edges) re[id] = { ...edges[id], highlight: 'default' }
-    scheduleSnaps(computeTopoSort(rn, re), SPEED_DELAY[speed])
+    const computed = computeTopoSort(rn, re)
+    set({ snaps: computed, snapIndex: -1, steps: [], statusText: 'Running Topological Sort…' })
+    scheduleSnaps(computed, SPEED_DELAY[speed])
   },
 
   reset: () => {
     cancelAnim()
     const fresh = buildDefaultGraph()
-    set({ ...fresh, queue: [], result: [], cycleDetected: false, done: false, isAnimating: false })
+    set({ ...fresh, queue: [], result: [], cycleDetected: false, done: false, isAnimating: false, snaps: [], snapIndex: -1, statusText: 'Ready.', steps: [] })
   },
 
   updateNodePosition: (id, x, y) =>
     set(s => ({ nodes: { ...s.nodes, [id]: { ...s.nodes[id], x, y } } })),
+
+  clearSteps: () => set({ steps: [] }),
+
+  prepareSnaps: () => {
+    cancelAnim()
+    const { nodes, edges } = get()
+    const rn: Record<string, TopoNode> = {}
+    for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
+    const re: Record<string, TopoEdge> = {}
+    for (const id in edges) re[id] = { ...edges[id], highlight: 'default' }
+    const computed = computeTopoSort(rn, re)
+    const first = computed[0]
+    set({
+      snaps: computed,
+      snapIndex: 0,
+      nodes: first.nodes,
+      edges: first.edges,
+      queue: first.queue,
+      result: first.result,
+      cycleDetected: first.cycleDetected,
+      done: first.done,
+      isAnimating: false,
+      steps: [],
+      statusText: `Step 1 / ${computed.length}`,
+    })
+  },
+
+  stepForward: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex >= snaps.length - 1) return
+    const newIdx = snapIndex + 1
+    const snap = snaps[newIdx]
+    const text = snap.done && snap.cycleDetected
+      ? 'Cycle detected!'
+      : snap.done
+      ? `Done — order: ${snap.result.join('→')}`
+      : snap.result.length > 0
+      ? `Added node ${snap.result[snap.result.length - 1]} to order`
+      : 'Starting...'
+    set(prev => ({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      queue: snap.queue,
+      result: snap.result,
+      cycleDetected: snap.cycleDetected,
+      done: snap.done,
+      statusText: text,
+      steps: [...prev.steps, { time: nowTime(), text }],
+    }))
+  },
+
+  stepBack: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex <= 0) return
+    const newIdx = snapIndex - 1
+    const snap = snaps[newIdx]
+    set({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      queue: snap.queue,
+      result: snap.result,
+      cycleDetected: snap.cycleDetected,
+      done: snap.done,
+      statusText: `Step ${newIdx + 1} / ${snaps.length}`,
+    })
+  },
+
+  loadFromJSON: (json: string) => {
+    try {
+      const data = JSON.parse(json)
+      const nodeLabels: string[] = (data.nodes ?? []).map((n: unknown) => String(n))
+      const edgePairs: [string, string][] = (data.edges ?? []).map((e: unknown[]) => [String(e[0]), String(e[1])])
+      cancelAnim()
+      const newNodes: Record<string, TopoNode> = {}
+      const labelToId: Record<string, string> = {}
+      // Compute inDegrees
+      const inDegreeMap: Record<string, number> = {}
+      nodeLabels.forEach(label => { inDegreeMap[label] = 0 })
+      for (const [, to] of edgePairs) {
+        if (inDegreeMap[to] !== undefined) inDegreeMap[to]++
+      }
+      nodeLabels.forEach((label, i) => {
+        const id = nanoid()
+        const angle = (2 * Math.PI * i) / nodeLabels.length
+        const cx = 270, cy = 210, r = 160
+        newNodes[id] = { id, label, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), highlight: 'default', inDegree: inDegreeMap[label] ?? 0 }
+        labelToId[label] = id
+      })
+      const newEdges: Record<string, TopoEdge> = {}
+      for (const [from, to] of edgePairs) {
+        if (labelToId[from] && labelToId[to] && labelToId[from] !== labelToId[to]) {
+          const edge: TopoEdge = { id: nanoid(), from: labelToId[from], to: labelToId[to], highlight: 'default' }
+          newEdges[edge.id] = edge
+        }
+      }
+      set({ nodes: newNodes, edges: newEdges, queue: [], result: [], cycleDetected: false, done: false, isAnimating: false, snaps: [], snapIndex: -1, statusText: 'Graph loaded from JSON.', steps: [] })
+    } catch {
+      // ignore bad JSON
+    }
+  },
 }))

@@ -34,6 +34,10 @@ function cancelAnim() {
   animGen++
 }
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 function makeNil(): RBNode {
   return { id: nanoid(), value: 0, color: 'black', left: null, right: null, parent: null, highlight: 'default', isNil: true }
 }
@@ -136,7 +140,6 @@ class RBTree {
   insert(value: number): Snap[] {
     const snaps: Snap[] = []
 
-    // Traversal animation
     const path: string[] = []
     let cur: string | null = this.rootId
     while (cur !== null && !this.nodes[cur].isNil) {
@@ -151,7 +154,6 @@ class RBTree {
       snaps.push({ nodes: snap, rootId: this.rootId })
     }
 
-    // Insert new node
     const newNode = makeNode(value, this.nilId)
     this.nodes[newNode.id] = newNode
 
@@ -172,7 +174,6 @@ class RBTree {
     insSnap[newNode.id] = { ...insSnap[newNode.id], highlight: 'inserted' }
     snaps.push({ nodes: insSnap, rootId: this.rootId })
 
-    // Fix violations
     snaps.push(...this.fixInsert(newNode.id))
     snaps.push(this.snapshot())
     return snaps
@@ -189,7 +190,6 @@ class RBTree {
       if (parent === this.nodes[grandparent].left) {
         const uncle = this.nodes[grandparent].right!
         if (!this.isNil(uncle) && this.nodes[uncle].color === 'red') {
-          // Case 1: Recolor
           const recolorSnap = cloneNodes(this.nodes)
           recolorSnap[parent] = { ...recolorSnap[parent], highlight: 'recoloring' }
           recolorSnap[uncle] = { ...recolorSnap[uncle], highlight: 'recoloring' }
@@ -203,7 +203,6 @@ class RBTree {
           z = grandparent
         } else {
           if (z === this.nodes[parent].right) {
-            // Case 2: Left rotate
             const rotSnap = cloneNodes(this.nodes)
             rotSnap[z] = { ...rotSnap[z], highlight: 'rotating' }
             rotSnap[parent] = { ...rotSnap[parent], highlight: 'rotating' }
@@ -212,7 +211,6 @@ class RBTree {
             this.rotateLeft(z)
             snaps.push(this.snapshot('default', 'Left Rotation'))
           }
-          // Case 3: Right rotate
           const parent2 = this.nodes[z].parent!
           const grandparent2 = this.nodes[parent2].parent!
           this.nodes[parent2] = { ...this.nodes[parent2], color: 'black' }
@@ -227,7 +225,6 @@ class RBTree {
       } else {
         const uncle = this.nodes[grandparent].left!
         if (!this.isNil(uncle) && this.nodes[uncle].color === 'red') {
-          // Case 1 mirror: Recolor
           const recolorSnap = cloneNodes(this.nodes)
           recolorSnap[parent] = { ...recolorSnap[parent], highlight: 'recoloring' }
           recolorSnap[uncle] = { ...recolorSnap[uncle], highlight: 'recoloring' }
@@ -241,7 +238,6 @@ class RBTree {
           z = grandparent
         } else {
           if (z === this.nodes[parent].left) {
-            // Case 2 mirror: Right rotate
             const rotSnap = cloneNodes(this.nodes)
             rotSnap[z] = { ...rotSnap[z], highlight: 'rotating' }
             rotSnap[parent] = { ...rotSnap[parent], highlight: 'rotating' }
@@ -250,7 +246,6 @@ class RBTree {
             this.rotateRight(z)
             snaps.push(this.snapshot('default', 'Right Rotation'))
           }
-          // Case 3 mirror: Left rotate
           const parent2 = this.nodes[z].parent!
           const grandparent2 = this.nodes[parent2].parent!
           this.nodes[parent2] = { ...this.nodes[parent2], color: 'black' }
@@ -319,17 +314,19 @@ function buildInitial(): { nodes: RBNodeMap; rootId: string | null; nilId: strin
 
 const INITIAL = buildInitial()
 
-function scheduleSnaps(snaps: Snap[], delay: number) {
+function scheduleSnaps(snaps: Snap[], delay: number, finalStatus: string) {
   const gen = ++animGen
   useRBTreeStore.setState({ isAnimating: true })
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
+      const isLast = i === snaps.length - 1
       useRBTreeStore.setState({
         nodes: snap.nodes,
         rootId: snap.rootId,
         rotationLabel: snap.rotationLabel ?? '',
-        isAnimating: i < snaps.length - 1,
+        isAnimating: !isLast,
+        ...(isLast ? { statusText: finalStatus } : {}),
       })
     }, i * delay)
     animTimers.push(t)
@@ -344,11 +341,15 @@ interface RBTreeStore {
   inputValue: string
   isAnimating: boolean
   rotationLabel: string
+  statusText: string
+  steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   insert: (value: number) => void
   search: (value: number) => void
   reset: () => void
+  clearSteps: () => void
+  loadFromCSV: (csv: string) => void
 }
 
 export const useRBTreeStore = create<RBTreeStore>((set, get) => ({
@@ -359,33 +360,57 @@ export const useRBTreeStore = create<RBTreeStore>((set, get) => ({
   inputValue: '',
   isAnimating: false,
   rotationLabel: '',
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setInputValue: v => set({ inputValue: v }),
   setSpeed: s => set({ speed: s }),
+  clearSteps: () => set({ steps: [] }),
 
   reset: () => {
     cancelAnim()
     const fresh = buildInitial()
-    set({ nodes: cloneNodes(fresh.nodes), rootId: fresh.rootId, nilId: fresh.nilId, isAnimating: false, rotationLabel: '' })
+    set({ nodes: cloneNodes(fresh.nodes), rootId: fresh.rootId, nilId: fresh.nilId, isAnimating: false, rotationLabel: '', statusText: 'Tree reset to default.' })
   },
 
   search: value => {
     cancelAnim()
-    const { nodes, rootId, nilId, speed } = get()
+    const { nodes, rootId, nilId, speed, steps } = get()
     const tree = new RBTree({ nodes: cloneNodes(nodes), rootId, nilId })
     const snaps = tree.search(value)
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+    // Determine if found
+    const foundSnap = snaps.find(s => {
+      for (const id in s.nodes) {
+        if (!s.nodes[id].isNil && s.nodes[id].value === value && s.nodes[id].highlight === 'found') return true
+      }
+      return false
+    })
+    const finalStatus = foundSnap ? `Found ${value}` : `${value} not found`
+    const stepText = foundSnap ? `Search: Found ${value}` : `Search: ${value} not found`
+    set({ steps: [...steps, { time: nowTime(), text: stepText }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], finalStatus)
   },
 
   insert: value => {
     cancelAnim()
-    const { nodes, rootId, nilId, speed } = get()
+    const { nodes, rootId, nilId, speed, steps } = get()
     if (countReal(nodes, rootId) >= 31) return
     const tree = new RBTree({ nodes: cloneNodes(nodes), rootId, nilId })
     const snaps = tree.insert(value)
     if (snaps.length === 0) return
-    // Append final authoritative state from tree
     snaps.push({ nodes: cloneNodes(tree.nodes), rootId: tree.rootId })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+    set({ steps: [...steps, { time: nowTime(), text: `Insert: ${value} added (RB-fixed)` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Inserted ${value}`)
+  },
+
+  loadFromCSV: (csv: string) => {
+    cancelAnim()
+    const vals = csv.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+    if (vals.length === 0) return
+    const tree = new RBTree()
+    for (const v of vals) {
+      tree.insert(v)
+    }
+    set({ nodes: cloneNodes(tree.nodes), rootId: tree.rootId, nilId: tree.nilId, isAnimating: false, rotationLabel: '', statusText: `Loaded ${vals.length} values` })
   },
 }))

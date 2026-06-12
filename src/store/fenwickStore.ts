@@ -19,6 +19,10 @@ function cancelAnim() {
   animGen++
 }
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 const DEFAULT_ARR = [1, 2, 3, 4, 5, 6, 7, 8]
 const SPEED_DELAY = { slow: 700, normal: 350, fast: 130 }
 
@@ -37,19 +41,21 @@ function buildBIT(arr: number[]): number[] {
   return bit
 }
 
-function scheduleSnaps(snaps: FWSnap[], delay: number) {
+function scheduleSnaps(snaps: FWSnap[], delay: number, finalStatus: string) {
   const gen = ++animGen
   useFWStore.setState({ isAnimating: true })
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
+      const isLast = i === snaps.length - 1
       useFWStore.setState({
         bit: snap.bit,
         arrHL: snap.arrHL,
         bitHL: snap.bitHL,
         message: snap.message,
         resultSum: snap.resultSum,
-        isAnimating: i < snaps.length - 1,
+        isAnimating: !isLast,
+        ...(isLast ? { statusText: finalStatus } : {}),
       })
     }, i * delay)
     animTimers.push(t)
@@ -68,6 +74,8 @@ interface FWStore {
   queryIdx: string
   updateIdx: string
   updateDelta: string
+  statusText: string
+  steps: { time: string; text: string }[]
 
   setSpeed: (s: 'slow' | 'normal' | 'fast') => void
   setQueryIdx: (v: string) => void
@@ -76,6 +84,8 @@ interface FWStore {
   query: (i: number) => void
   update: (i: number, delta: number) => void
   reset: () => void
+  clearSteps: () => void
+  loadFromCSV: (csv: string) => void
 }
 
 export const useFWStore = create<FWStore>((set, get) => ({
@@ -90,15 +100,18 @@ export const useFWStore = create<FWStore>((set, get) => ({
   queryIdx: '',
   updateIdx: '',
   updateDelta: '',
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
   setQueryIdx: v => set({ queryIdx: v }),
   setUpdateIdx: v => set({ updateIdx: v }),
   setUpdateDelta: v => set({ updateDelta: v }),
+  clearSteps: () => set({ steps: [] }),
 
   query: (qi: number) => {
     cancelAnim()
-    const { bit, arr, speed } = get()
+    const { bit, arr, speed, steps } = get()
     const n = arr.length
     if (qi < 1 || qi > n) return
 
@@ -116,7 +129,6 @@ export const useFWStore = create<FWStore>((set, get) => ({
       const ahl = new Array(n).fill('default') as FWNodeHL[]
       const bhl = new Array(n + 1).fill('default') as FWNodeHL[]
       bhl[i] = 'querying'
-      // highlight the responsibility range in arr
       const lo = i - lowbit(i) + 1
       for (let k = lo - 1; k < i; k++) ahl[k] = 'querying'
       snaps.push({
@@ -130,12 +142,14 @@ export const useFWStore = create<FWStore>((set, get) => ({
     const doneAHL = new Array(n).fill('default') as FWNodeHL[]
     const doneBHL = new Array(n + 1).fill('default') as FWNodeHL[]
     snaps.push({ bit: b, arrHL: doneAHL, bitHL: doneBHL, message: `query(${qi}) = ${total}`, resultSum: total })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+
+    set({ steps: [...steps, { time: nowTime(), text: `Query(${qi}) = ${total}` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Prefix sum(${qi}) = ${total}`)
   },
 
   update: (ui: number, delta: number) => {
     cancelAnim()
-    const { bit, arr, speed } = get()
+    const { bit, arr, speed, steps } = get()
     const n = arr.length
     if (ui < 1 || ui > n) return
 
@@ -171,7 +185,9 @@ export const useFWStore = create<FWStore>((set, get) => ({
     const done = new Array(n).fill('default') as FWNodeHL[]
     const doneBHL = new Array(n + 1).fill('default') as FWNodeHL[]
     snaps.push({ bit: [...b], arrHL: done, bitHL: doneBHL, message: `Update complete`, resultSum: null })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+
+    set({ steps: [...steps, { time: nowTime(), text: `Update(${ui}, ${delta > 0 ? '+' : ''}${delta})` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Updated index ${ui} by ${delta > 0 ? '+' : ''}${delta}`)
     set({ arr: newArr })
   },
 
@@ -185,6 +201,23 @@ export const useFWStore = create<FWStore>((set, get) => ({
       message: '',
       resultSum: null,
       isAnimating: false,
+      statusText: 'Reset to default array.',
+    })
+  },
+
+  loadFromCSV: (csv: string) => {
+    cancelAnim()
+    const vals = csv.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+    if (vals.length === 0) return
+    set({
+      arr: vals,
+      bit: buildBIT(vals),
+      arrHL: new Array(vals.length).fill('default') as FWNodeHL[],
+      bitHL: new Array(vals.length + 1).fill('default') as FWNodeHL[],
+      message: '',
+      resultSum: null,
+      isAnimating: false,
+      statusText: `Loaded array of length ${vals.length}`,
     })
   },
 }))

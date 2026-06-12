@@ -31,6 +31,8 @@ interface BFSnap {
   done: boolean
 }
 
+type Step = { time: string; text: string }
+
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 900, normal: 450, fast: 180 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -40,6 +42,10 @@ function cancelAnim() {
   animTimers.forEach(clearTimeout)
   animTimers = []
   animGen++
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 function buildDefaultGraph(): { nodes: Record<string, BFNode>; edges: Record<string, BFEdge> } {
@@ -168,12 +174,21 @@ interface BellmanFordStore {
   isAnimating: boolean
   speed: AnimationSpeed
   startNode: string
+  snaps: BFSnap[]
+  snapIndex: number
+  statusText: string
+  steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
   setStartNode: (v: string) => void
   run: () => void
   reset: () => void
   updateNodePosition: (id: string, x: number, y: number) => void
+  clearSteps: () => void
+  prepareSnaps: () => void
+  stepForward: () => void
+  stepBack: () => void
+  loadFromJSON: (json: string) => void
 }
 
 function scheduleSnaps(snaps: BFSnap[], delay: number) {
@@ -182,7 +197,13 @@ function scheduleSnaps(snaps: BFSnap[], delay: number) {
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
-      useBellmanFordStore.setState({
+      const isLast = i === snaps.length - 1
+      const text = snap.done
+        ? 'Done'
+        : snap.negativeCycle
+        ? 'Negative cycle detected!'
+        : `Pass ${snap.iteration}`
+      useBellmanFordStore.setState(prev => ({
         nodes: snap.nodes,
         edges: snap.edges,
         distances: snap.distances,
@@ -190,8 +211,12 @@ function scheduleSnaps(snaps: BFSnap[], delay: number) {
         totalIterations: snap.totalIterations,
         negativeCycle: snap.negativeCycle,
         done: snap.done,
-        isAnimating: i < snaps.length - 1,
-      })
+        isAnimating: !isLast,
+        statusText: isLast
+          ? snap.negativeCycle ? 'Done — negative cycle detected!' : `Done — ${snap.totalIterations} passes completed`
+          : text,
+        steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
+      }))
     }, i * delay)
     animTimers.push(t)
   })
@@ -208,6 +233,10 @@ export const useBellmanFordStore = create<BellmanFordStore>((set, get) => ({
   isAnimating: false,
   speed: 'normal',
   startNode: '1',
+  snaps: [],
+  snapIndex: -1,
+  statusText: 'Ready.',
+  steps: [],
 
   setSpeed: s => set({ speed: s }),
   setStartNode: v => set({ startNode: v }),
@@ -221,15 +250,117 @@ export const useBellmanFordStore = create<BellmanFordStore>((set, get) => ({
     for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
     const re: Record<string, BFEdge> = {}
     for (const id in edges) re[id] = { ...edges[id], highlight: 'default' }
-    scheduleSnaps(computeBellmanFord(rn, re, startId), SPEED_DELAY[speed])
+    const computed = computeBellmanFord(rn, re, startId)
+    set({ snaps: computed, snapIndex: -1, steps: [], statusText: 'Running Bellman-Ford…' })
+    scheduleSnaps(computed, SPEED_DELAY[speed])
   },
 
   reset: () => {
     cancelAnim()
     const fresh = buildDefaultGraph()
-    set({ ...fresh, distances: {}, iteration: 0, totalIterations: 4, negativeCycle: false, done: false, isAnimating: false, startNode: '1' })
+    set({ ...fresh, distances: {}, iteration: 0, totalIterations: 4, negativeCycle: false, done: false, isAnimating: false, startNode: '1', snaps: [], snapIndex: -1, statusText: 'Ready.', steps: [] })
   },
 
   updateNodePosition: (id, x, y) =>
     set(s => ({ nodes: { ...s.nodes, [id]: { ...s.nodes[id], x, y } } })),
+
+  clearSteps: () => set({ steps: [] }),
+
+  prepareSnaps: () => {
+    cancelAnim()
+    const { nodes, edges, startNode } = get()
+    const startId = findNodeByLabel(nodes, startNode)
+    if (!startId) return
+    const rn: Record<string, BFNode> = {}
+    for (const id in nodes) rn[id] = { ...nodes[id], highlight: 'default' }
+    const re: Record<string, BFEdge> = {}
+    for (const id in edges) re[id] = { ...edges[id], highlight: 'default' }
+    const computed = computeBellmanFord(rn, re, startId)
+    const first = computed[0]
+    set({
+      snaps: computed,
+      snapIndex: 0,
+      nodes: first.nodes,
+      edges: first.edges,
+      distances: first.distances,
+      iteration: first.iteration,
+      totalIterations: first.totalIterations,
+      negativeCycle: first.negativeCycle,
+      done: first.done,
+      isAnimating: false,
+      steps: [],
+      statusText: `Step 1 / ${computed.length}`,
+    })
+  },
+
+  stepForward: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex >= snaps.length - 1) return
+    const newIdx = snapIndex + 1
+    const snap = snaps[newIdx]
+    const text = snap.done
+      ? 'Done'
+      : snap.negativeCycle
+      ? 'Negative cycle detected!'
+      : `Pass ${snap.iteration}`
+    set(prev => ({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      distances: snap.distances,
+      iteration: snap.iteration,
+      totalIterations: snap.totalIterations,
+      negativeCycle: snap.negativeCycle,
+      done: snap.done,
+      statusText: text,
+      steps: [...prev.steps, { time: nowTime(), text }],
+    }))
+  },
+
+  stepBack: () => {
+    const { snapIndex, snaps } = get()
+    if (snapIndex <= 0) return
+    const newIdx = snapIndex - 1
+    const snap = snaps[newIdx]
+    set({
+      snapIndex: newIdx,
+      nodes: snap.nodes,
+      edges: snap.edges,
+      distances: snap.distances,
+      iteration: snap.iteration,
+      totalIterations: snap.totalIterations,
+      negativeCycle: snap.negativeCycle,
+      done: snap.done,
+      statusText: `Step ${newIdx + 1} / ${snaps.length}`,
+    })
+  },
+
+  loadFromJSON: (json: string) => {
+    try {
+      const data = JSON.parse(json)
+      const nodeLabels: string[] = (data.nodes ?? []).map((n: unknown) => String(n))
+      const edgeTuples: [string, string, number][] = (data.edges ?? []).map((e: unknown[]) => [String(e[0]), String(e[1]), Number(e[2] ?? 1)])
+      cancelAnim()
+      const newNodes: Record<string, BFNode> = {}
+      const labelToId: Record<string, string> = {}
+      nodeLabels.forEach((label, i) => {
+        const id = nanoid()
+        const angle = (2 * Math.PI * i) / nodeLabels.length
+        const cx = 270, cy = 210, r = 150
+        newNodes[id] = { id, label, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), highlight: 'default' }
+        labelToId[label] = id
+      })
+      const newEdges: Record<string, BFEdge> = {}
+      for (const [from, to, weight] of edgeTuples) {
+        if (labelToId[from] && labelToId[to] && labelToId[from] !== labelToId[to]) {
+          const edge: BFEdge = { id: nanoid(), from: labelToId[from], to: labelToId[to], weight, highlight: 'default' }
+          newEdges[edge.id] = edge
+        }
+      }
+      const V = nodeLabels.length
+      set({ nodes: newNodes, edges: newEdges, distances: {}, iteration: 0, totalIterations: Math.max(V - 1, 0), negativeCycle: false, done: false, isAnimating: false, snaps: [], snapIndex: -1, statusText: 'Graph loaded from JSON.', steps: [] })
+    } catch {
+      // ignore bad JSON
+    }
+  },
 }))

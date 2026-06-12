@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { nanoid } from 'nanoid'
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 export type CQHighlight = 'empty' | 'filled' | 'inserted' | 'deleted'
 
 export interface CQSlot {
@@ -16,11 +20,15 @@ interface CQStore {
   size: number
   capacity: number
   inputValue: string
+  statusText: string
+  steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setCapacity: (n: number) => void
   enqueue: (value: number) => void
   dequeue: () => void
   reset: () => void
+  clearSteps: () => void
+  loadCustom: (vals: number[]) => void
 }
 
 function makeSlots(n: number): CQSlot[] {
@@ -38,11 +46,14 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
   size: 0,
   capacity: 6,
   inputValue: '',
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setInputValue: v => set({ inputValue: v }),
+  clearSteps: () => set({ steps: [] }),
 
   setCapacity: n =>
-    set({ slots: makeSlots(n), capacity: n, front: 0, rear: 0, size: 0 }),
+    set({ slots: makeSlots(n), capacity: n, front: 0, rear: 0, size: 0, statusText: `Capacity set to ${n}`, steps: [] }),
 
   enqueue: value => {
     const { slots, rear, size, capacity } = get()
@@ -51,7 +62,13 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
       s.highlight === 'inserted' ? { ...s, highlight: 'filled' as CQHighlight } : s,
     )
     ns[rear] = { ...ns[rear], value, highlight: 'inserted' }
-    set({ slots: ns, rear: (rear + 1) % capacity, size: size + 1 })
+    set(state => ({
+      slots: ns,
+      rear: (rear + 1) % capacity,
+      size: size + 1,
+      statusText: `Enqueued ${value} at slot ${rear}`,
+      steps: [...state.steps, { time: nowTime(), text: `Enqueued ${value} at slot ${rear}` }],
+    }))
     setTimeout(() => {
       useCircularQueueStore.setState(s => ({
         slots: s.slots.map(sl =>
@@ -64,9 +81,14 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
   dequeue: () => {
     const { slots, front, size } = get()
     if (size === 0) return
+    const val = slots[front].value
     const ns = [...slots]
     ns[front] = { ...ns[front], highlight: 'deleted' }
-    set({ slots: ns })
+    set(state => ({
+      slots: ns,
+      statusText: `Dequeued ${val} from slot ${front}`,
+      steps: [...state.steps, { time: nowTime(), text: `Dequeued ${val} from slot ${front}` }],
+    }))
     setTimeout(() => {
       useCircularQueueStore.setState(s => {
         const f = s.front
@@ -77,8 +99,26 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
     }, 700)
   },
 
+  loadCustom: (vals) => {
+    const { capacity } = get()
+    const cap = Math.max(capacity, vals.length)
+    const slots = makeSlots(cap)
+    vals.forEach((v, i) => {
+      slots[i] = { ...slots[i], value: v, highlight: 'filled' }
+    })
+    set({
+      slots,
+      front: 0,
+      rear: vals.length % cap,
+      size: vals.length,
+      capacity: cap,
+      statusText: `Loaded ${vals.length} custom values`,
+      steps: [],
+    })
+  },
+
   reset: () => {
     const { capacity } = get()
-    set({ slots: makeSlots(capacity), front: 0, rear: 0, size: 0 })
+    set({ slots: makeSlots(capacity), front: 0, rear: 0, size: 0, statusText: 'Ready — use controls to interact.', steps: [] })
   },
 }))

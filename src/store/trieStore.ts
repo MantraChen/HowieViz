@@ -26,6 +26,10 @@ function cancelAnim() {
   animGen++
 }
 
+function nowTime() {
+  return new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
 const DEFAULT_WORDS = ['apple', 'app', 'apply', 'apt', 'bat', 'ball']
 
 function buildTrie(words: string[]): { nodes: Record<string, TrieNode>; rootId: string } {
@@ -62,16 +66,18 @@ function resetHL(nodes: Record<string, TrieNode>): Record<string, TrieNode> {
   return copy
 }
 
-function scheduleSnaps(snaps: TrieSnap[], delay: number) {
+function scheduleSnaps(snaps: TrieSnap[], delay: number, finalStatus: string) {
   const gen = ++animGen
   useTrieStore.setState({ isAnimating: true })
   snaps.forEach((snap, i) => {
     const t = setTimeout(() => {
       if (animGen !== gen) return
+      const isLast = i === snaps.length - 1
       useTrieStore.setState({
         nodes: snap.nodes,
         message: snap.message,
-        isAnimating: i < snaps.length - 1,
+        isAnimating: !isLast,
+        ...(isLast ? { statusText: finalStatus } : {}),
       })
     }, i * delay)
     animTimers.push(t)
@@ -89,6 +95,8 @@ interface TrieStore {
   isAnimating: boolean
   wordInput: string
   speed: 'slow' | 'normal' | 'fast'
+  statusText: string
+  steps: { time: string; text: string }[]
 
   setWordInput: (v: string) => void
   setSpeed: (s: 'slow' | 'normal' | 'fast') => void
@@ -96,6 +104,8 @@ interface TrieStore {
   search: (word: string) => void
   deleteTrie: (word: string) => void
   reset: () => void
+  clearSteps: () => void
+  loadFromCSV: (csv: string) => void
 }
 
 export const useTrieStore = create<TrieStore>((set, get) => ({
@@ -105,14 +115,17 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
   isAnimating: false,
   wordInput: '',
   speed: 'normal',
+  statusText: 'Ready — use controls to interact.',
+  steps: [],
 
   setWordInput: v => set({ wordInput: v }),
   setSpeed: s => set({ speed: s }),
+  clearSteps: () => set({ steps: [] }),
 
   insert: (word: string) => {
     cancelAnim()
     if (!word) return
-    const { nodes: rawNodes, rootId, speed } = get()
+    const { nodes: rawNodes, rootId, speed, steps } = get()
     const snaps: TrieSnap[] = []
     const nodes = resetHL(rawNodes)
 
@@ -124,7 +137,6 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
         const newNode: TrieNode = { id: nanoid(), char: ch, isEnd: false, children: {}, highlight: 'inserted' }
         n[newNode.id] = newNode
         n[cur] = { ...n[cur], children: { ...n[cur].children, [ch]: newNode.id }, highlight: 'traversing' }
-        // Persist insertion
         for (const id in n) nodes[id] = { ...n[id], highlight: 'default' }
         nodes[newNode.id] = { ...newNode, highlight: 'default' }
         nodes[cur] = { ...nodes[cur], children: { ...nodes[cur].children, [ch]: newNode.id } }
@@ -146,13 +158,14 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
     const done = deepCopyNodes(nodes)
     snaps.push({ nodes: done, rootId, message: `'${word}' is now in the trie` })
 
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+    set({ steps: [...steps, { time: nowTime(), text: `Insert: "${word}" added to trie` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Inserted "${word}"`)
   },
 
   search: (word: string) => {
     cancelAnim()
     if (!word) return
-    const { nodes: rawNodes, rootId, speed } = get()
+    const { nodes: rawNodes, rootId, speed, steps } = get()
     const snaps: TrieSnap[] = []
     const nodes = resetHL(rawNodes)
 
@@ -177,8 +190,9 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
       cur = nextId
     }
 
+    let isWord = false
     if (found) {
-      const isWord = nodes[cur].isEnd
+      isWord = nodes[cur].isEnd
       const n = deepCopyNodes(nodes)
       n[cur] = { ...n[cur], highlight: isWord ? 'found' : 'notFound' }
       snaps.push({
@@ -189,17 +203,20 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
 
     const done = deepCopyNodes(nodes)
     snaps.push({ nodes: done, rootId, message: snaps[snaps.length - 1]?.message ?? '' })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+
+    const finalStatus = found && isWord ? `Found "${word}"` : `"${word}" not found`
+    const stepText = found && isWord ? `Search: "${word}" found` : `Search: "${word}" not found`
+    set({ steps: [...steps, { time: nowTime(), text: stepText }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], finalStatus)
   },
 
   deleteTrie: (word: string) => {
     cancelAnim()
     if (!word) return
-    const { nodes: rawNodes, rootId, speed } = get()
+    const { nodes: rawNodes, rootId, speed, steps } = get()
     const snaps: TrieSnap[] = []
     const nodes = resetHL(rawNodes)
 
-    // Find path
     const path: string[] = [rootId]
     let cur = rootId
     let found = true
@@ -213,19 +230,17 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
     if (!found || !nodes[cur].isEnd) {
       const n = deepCopyNodes(nodes)
       snaps.push({ nodes: n, rootId, message: `'${word}' not found in trie` })
-      scheduleSnaps(snaps, SPEED_DELAY[speed])
+      set({ steps: [...steps, { time: nowTime(), text: `Delete: "${word}" not found` }] })
+      scheduleSnaps(snaps, SPEED_DELAY[speed], `"${word}" not found`)
       return
     }
 
-    // Highlight path
     const n1 = deepCopyNodes(nodes)
     for (const id of path) n1[id] = { ...n1[id], highlight: 'traversing' }
     snaps.push({ nodes: n1, rootId, message: `Found '${word}', marking for deletion` })
 
-    // Unmark end
     nodes[cur] = { ...nodes[cur], isEnd: false }
 
-    // Remove leaf nodes with no children walking back up
     const chars = Array.from(word)
     for (let i = path.length - 1; i >= 1; i--) {
       const nodeId = path[i]
@@ -245,12 +260,22 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
 
     const done = deepCopyNodes(nodes)
     snaps.push({ nodes: done, rootId, message: `'${word}' deleted from trie` })
-    scheduleSnaps(snaps, SPEED_DELAY[speed])
+
+    set({ steps: [...steps, { time: nowTime(), text: `Delete: "${word}" removed from trie` }] })
+    scheduleSnaps(snaps, SPEED_DELAY[speed], `Deleted "${word}"`)
   },
 
   reset: () => {
     cancelAnim()
     const fresh = buildTrie(DEFAULT_WORDS)
-    set({ nodes: deepCopyNodes(fresh.nodes), rootId: fresh.rootId, message: '', isAnimating: false })
+    set({ nodes: deepCopyNodes(fresh.nodes), rootId: fresh.rootId, message: '', isAnimating: false, statusText: 'Trie reset to default.' })
+  },
+
+  loadFromCSV: (csv: string) => {
+    cancelAnim()
+    const words = csv.split(',').map(s => s.trim().toLowerCase().replace(/[^a-z]/g, '')).filter(w => w.length > 0)
+    if (words.length === 0) return
+    const fresh = buildTrie(words)
+    set({ nodes: deepCopyNodes(fresh.nodes), rootId: fresh.rootId, message: '', isAnimating: false, statusText: `Loaded ${words.length} words` })
   },
 }))

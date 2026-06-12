@@ -103,7 +103,7 @@ export function KnapsackVisualizer() {
           { label: 'Active', bg: '#9b6fd4', border: '#c9a0ff', color: '#fff' },
           { label: 'Backtrack', bg: '#c9a0ff', border: '#9b6fd4', color: '#1a0a2e' },
           { label: 'Done', bg: '#c9a0ff22', border: '#c9a0ff', color: '#c9a0ff' },
-        ].map(({ label, bg, border, color }) => (
+        ].map(({ label, bg, border }) => (
           <div key={label} className="flex items-center gap-1.5">
             <span
               style={{
