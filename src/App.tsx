@@ -26,6 +26,11 @@ import { DequePage } from '@/pages/DequePage'
 import { LinearSearchPage } from '@/pages/LinearSearchPage'
 import { CountingSortPage } from '@/pages/CountingSortPage'
 import { RadixSortPage } from '@/pages/RadixSortPage'
+import { BellmanFordPage } from '@/pages/BellmanFordPage'
+import { FloydWarshallPage } from '@/pages/FloydWarshallPage'
+import { TopoSortPage } from '@/pages/TopoSortPage'
+import { PrimsPage } from '@/pages/PrimsPage'
+import { KruskalsPage } from '@/pages/KruskalsPage'
 
 export default function App() {
   return (
@@ -57,6 +62,11 @@ export default function App() {
         <Route path="visualizer/trie" element={<TriePage />} />
         <Route path="visualizer/segment-tree" element={<SegmentTreePage />} />
         <Route path="visualizer/fenwick-tree" element={<FenwickPage />} />
+        <Route path="visualizer/bellman-ford" element={<BellmanFordPage />} />
+        <Route path="visualizer/floyd-warshall" element={<FloydWarshallPage />} />
+        <Route path="visualizer/topological-sort" element={<TopoSortPage />} />
+        <Route path="visualizer/prims" element={<PrimsPage />} />
+        <Route path="visualizer/kruskals" element={<KruskalsPage />} />
       </Route>
     </Routes>
   )

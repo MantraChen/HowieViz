@@ -34,9 +34,14 @@ const CATEGORIES = [
     title: 'Graphs',
     description: 'BFS, DFS, shortest paths, and disjoint sets on interactive graph canvases.',
     items: [
-      { label: 'BFS / DFS',         path: '/visualizer/graph',       ready: true },
-      { label: "Dijkstra's",         path: '/visualizer/dijkstra',    ready: true },
-      { label: 'Union Find / DSU',   path: '/visualizer/union-find',  ready: true },
+      { label: 'BFS / DFS',         path: '/visualizer/graph',             ready: true },
+      { label: "Dijkstra's",         path: '/visualizer/dijkstra',          ready: true },
+      { label: 'Bellman-Ford',       path: '/visualizer/bellman-ford',      ready: true },
+      { label: 'Floyd-Warshall',     path: '/visualizer/floyd-warshall',    ready: true },
+      { label: 'Topological Sort',   path: '/visualizer/topological-sort',  ready: true },
+      { label: "Prim's MST",         path: '/visualizer/prims',             ready: true },
+      { label: "Kruskal's MST",      path: '/visualizer/kruskals',          ready: true },
+      { label: 'Union Find / DSU',   path: '/visualizer/union-find',        ready: true },
     ],
   },
   {
