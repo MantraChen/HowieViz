@@ -1,15 +1,18 @@
 import { useKnapsackStore } from '@/store/knapsackStore'
 
-const CELL_W = 38
-const CELL_H = 32
-
 export function KnapsackVisualizer() {
   const { items, currentSnap, capacityInput } = useKnapsackStore()
-  const W = parseInt(capacityInput, 10) || 8
+  const rawW = parseInt(capacityInput, 10) || 8
+  const W = Math.min(rawW, 20)
+  const capped = rawW > 20
+
+  // Scale cell width: bigger cells when capacity is small
+  const cellW = Math.max(28, Math.min(52, Math.floor(580 / (W + 2))))
+  const cellH = 30
 
   if (!currentSnap) {
     return (
-      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] flex items-center justify-center h-32 text-[#3d2d5a] text-sm font-mono">
+      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] flex items-center justify-center h-40 text-[#3d2d5a] text-sm font-mono">
         Press Solve to animate
       </div>
     )
@@ -22,14 +25,22 @@ export function KnapsackVisualizer() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* DP Table */}
-      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-auto p-3">
+      {capped && (
+        <p className="text-xs text-[#6b4d8a] italic">Capacity capped at 20 for visualization</p>
+      )}
+
+      <div className="rounded-xl border border-[#2a1f3d] bg-[#090710] overflow-x-auto p-3">
         <table className="border-collapse" style={{ fontSize: 11, fontFamily: 'monospace' }}>
           <thead>
             <tr>
-              <th className="text-[#6b4d8a] text-xs pr-2 pb-1 text-right">item\W</th>
+              <th className="text-[#6b4d8a] text-xs pr-2 pb-1 text-right whitespace-nowrap">
+                item\W
+              </th>
               {Array.from({ length: W + 1 }, (_, j) => (
-                <th key={j} style={{ width: CELL_W, height: CELL_H, textAlign: 'center', color: '#6b4d8a', fontSize: 10 }}>
+                <th
+                  key={j}
+                  style={{ width: cellW, height: cellH, textAlign: 'center', color: '#6b4d8a', fontSize: 10 }}
+                >
                   {j}
                 </th>
               ))}
@@ -38,33 +49,40 @@ export function KnapsackVisualizer() {
           <tbody>
             {table.map((row, i) => (
               <tr key={i}>
-                <td className="text-right pr-2 text-[#6b4d8a] text-xs">
+                <td className="text-right pr-2 text-[#6b4d8a] text-xs whitespace-nowrap">
                   {i === 0 ? '∅' : `i${i}(w${items[i - 1]?.weight},v${items[i - 1]?.value})`}
                 </td>
                 {row.map((val, j) => {
                   const isActive = i === activeRow && j === activeCol
-                  const isBacktrack = phase === 'backtrack' && i === activeRow && j === activeCol
+                  const isBacktrack = phase === 'backtrack' && isActive
                   const isDone = phase === 'done'
 
                   let bg = '#0f0b17'
                   let border = '#2a1f3d'
                   let color = '#a78bde'
 
-                  if (isActive && phase === 'fill') { bg = '#9b6fd4'; color = '#fff'; border = '#c9a0ff' }
-                  else if (isBacktrack) { bg = '#ff6b8a22'; border = '#ff6b8a'; color = '#ff6b8a' }
-                  else if (isDone && i > 0 && selectedItems[i - 1] && j === W) { bg = '#c9a0ff22'; border = '#c9a0ff'; color = '#c9a0ff' }
+                  if (isActive && phase === 'fill') {
+                    bg = '#9b6fd4'; color = '#fff'; border = '#c9a0ff'
+                  } else if (isBacktrack) {
+                    bg = '#ff6b8a22'; border = '#ff6b8a'; color = '#ff6b8a'
+                  } else if (isDone && i > 0 && selectedItems[i - 1] && j === W) {
+                    bg = '#c9a0ff22'; border = '#c9a0ff'; color = '#c9a0ff'
+                  }
 
                   return (
-                    <td key={j} style={{
-                      width: CELL_W,
-                      height: CELL_H,
-                      textAlign: 'center',
-                      background: bg,
-                      border: `1px solid ${border}`,
-                      color,
-                      fontWeight: isActive || isBacktrack ? 'bold' : 'normal',
-                      transition: 'background 0.15s, border-color 0.15s',
-                    }}>
+                    <td
+                      key={j}
+                      style={{
+                        width: cellW,
+                        height: cellH,
+                        textAlign: 'center',
+                        background: bg,
+                        border: `1px solid ${border}`,
+                        color,
+                        fontWeight: isActive || isBacktrack ? 'bold' : 'normal',
+                        transition: 'background 0.15s, border-color 0.15s',
+                      }}
+                    >
                       {val}
                     </td>
                   )
@@ -75,22 +93,24 @@ export function KnapsackVisualizer() {
         </table>
       </div>
 
-      {/* Selected items */}
       {(phase === 'backtrack' || phase === 'done') && selectedItems.some(Boolean) && (
         <div className="rounded-xl border border-[#2a1f3d] bg-[#0f0b17] p-3">
           <p className="text-xs text-[#a78bde] font-semibold mb-2">Selected Items</p>
           <div className="flex flex-wrap gap-2">
             {items.map((item, i) =>
               selectedItems[i] ? (
-                <span key={i} className="px-2 py-1 rounded-md bg-[#c9a0ff]/15 border border-[#c9a0ff]/40 text-xs text-[#c9a0ff] font-mono">
+                <span
+                  key={i}
+                  className="px-2 py-1 rounded-md bg-[#c9a0ff]/15 border border-[#c9a0ff]/40 text-xs text-[#c9a0ff] font-mono"
+                >
                   w:{item.weight} v:{item.value}
                 </span>
               ) : null
             )}
           </div>
           <p className="text-xs text-[#6b4d8a] mt-2">
-            Total weight: <span className="text-[#b892e8]">{totalWeight}</span> /&nbsp;
-            Total value: <span className="text-[#c9a0ff] font-bold">{totalValue}</span>
+            Total weight: <span className="text-[#b892e8]">{totalWeight}</span>
+            {' '}/ Total value: <span className="text-[#c9a0ff] font-bold">{totalValue}</span>
           </p>
         </div>
       )}
