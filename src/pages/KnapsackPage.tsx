@@ -178,35 +178,31 @@ function ComplexityPanel() {
   )
 }
 
-// ─── Accordion section ────────────────────────────────────────────────────────
+// ─── Collapsible section ──────────────────────────────────────────────────────
 
-type SectionKey = 'controls' | 'pseudocode' | 'steps' | 'complexity'
-
-function AccordionSection({
-  title, sectionKey, openSections, toggle, children,
+function CollapsibleSection({
+  title, open, onToggle, children,
 }: {
   title: string
-  sectionKey: SectionKey
-  openSections: Set<SectionKey>
-  toggle: (k: SectionKey) => void
+  open: boolean
+  onToggle: () => void
   children: React.ReactNode
 }) {
-  const isOpen = openSections.has(sectionKey)
   return (
-    <div className="border-b border-[#2a1f3d]">
+    <div className="border border-[#2a1f3d] rounded-lg overflow-hidden">
       <button
-        onClick={() => toggle(sectionKey)}
-        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-[#e1d2e9] hover:bg-[#1a1428] transition-colors"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-[#e1d2e9] hover:bg-[#1a1428] transition-colors bg-[#0c0916]"
       >
         <span>{title}</span>
         <ChevronDown
           className={cn(
             'w-4 h-4 text-[#6b4d8a] transition-transform duration-200',
-            isOpen && 'rotate-180',
+            open && 'rotate-180',
           )}
         />
       </button>
-      {isOpen && <div className="px-4 pb-4">{children}</div>}
+      {open && <div className="px-4 pb-4 pt-3 bg-[#090710]">{children}</div>}
     </div>
   )
 }
@@ -257,36 +253,31 @@ function ModeSwitcher({ active, setActive }: { active: ModeKey; setActive: (m: M
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function KnapsackPage() {
-  const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set(['controls']))
+  const [pseudocodeOpen, setPseudocodeOpen] = useState(false)
+  const [stepsOpen, setStepsOpen] = useState(false)
+  const [complexityOpen, setComplexityOpen] = useState(true)
   const [activeMode, setActiveMode] = useState<ModeKey>('visualize')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const statusText = useKnapsackStore(s => s.statusText)
   const isAnimating = useKnapsackStore(s => s.isAnimating)
 
-  const toggleSection = (key: SectionKey) => {
-    setOpenSections(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
+  const rightPanelContent = (
+    <div className="space-y-4 p-4">
+      {/* Controls — always visible, no collapse header */}
+      <KnapsackControls />
 
-  const sidebarContent = (
-    <>
-      <AccordionSection title="Controls" sectionKey="controls" openSections={openSections} toggle={toggleSection}>
-        <KnapsackControls />
-      </AccordionSection>
-      <AccordionSection title="Pseudocode" sectionKey="pseudocode" openSections={openSections} toggle={toggleSection}>
-        <PseudocodePanel />
-      </AccordionSection>
-      <AccordionSection title="Steps" sectionKey="steps" openSections={openSections} toggle={toggleSection}>
-        <StepsPanel />
-      </AccordionSection>
-      <AccordionSection title="Complexity" sectionKey="complexity" openSections={openSections} toggle={toggleSection}>
+      {/* Divider */}
+      <div className="border-t border-[#2a1f3d]" />
+
+      {/* Complexity — collapsible, open by default */}
+      <CollapsibleSection
+        title="Complexity"
+        open={complexityOpen}
+        onToggle={() => setComplexityOpen(v => !v)}
+      >
         <ComplexityPanel />
-      </AccordionSection>
-    </>
+      </CollapsibleSection>
+    </div>
   )
 
   return (
@@ -304,14 +295,33 @@ export function KnapsackPage() {
       {/* ── Main area ── */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
 
-        {/* Visualization panel */}
-        <div className="flex-1 min-w-0 overflow-y-auto p-5">
+        {/* LEFT COLUMN — visualization + pseudocode + steps */}
+        <div className="flex-1 min-w-0 overflow-y-auto p-5 space-y-4">
+          {/* DP table visualization */}
           <KnapsackVisualizer />
+
+          {/* Pseudocode — collapsed by default */}
+          <CollapsibleSection
+            title="Pseudocode"
+            open={pseudocodeOpen}
+            onToggle={() => setPseudocodeOpen(v => !v)}
+          >
+            <PseudocodePanel />
+          </CollapsibleSection>
+
+          {/* Steps log — collapsed by default */}
+          <CollapsibleSection
+            title="Steps"
+            open={stepsOpen}
+            onToggle={() => setStepsOpen(v => !v)}
+          >
+            <StepsPanel />
+          </CollapsibleSection>
         </div>
 
-        {/* Right sidebar — desktop only */}
-        <div className="w-[280px] flex-none border-l border-[#2a1f3d] overflow-y-auto hidden md:block bg-[#0c0916]">
-          {sidebarContent}
+        {/* RIGHT COLUMN — controls + complexity (desktop only) */}
+        <div className="w-[260px] flex-none border-l border-[#2a1f3d] overflow-y-auto hidden md:block bg-[#0c0916]">
+          {rightPanelContent}
         </div>
       </div>
 
@@ -355,7 +365,7 @@ export function KnapsackPage() {
               </button>
             </div>
             <div className="overflow-y-auto flex-1">
-              {sidebarContent}
+              {rightPanelContent}
             </div>
           </div>
         </div>
