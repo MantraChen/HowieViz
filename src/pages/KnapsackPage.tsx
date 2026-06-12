@@ -77,42 +77,53 @@ function PseudocodePanel() {
 
 function StepsPanel() {
   const steps = useKnapsackStore(s => s.steps)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const clearSteps = useKnapsackStore(s => s.clearSteps)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = containerRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [steps])
 
-  if (steps.length === 0) {
-    return (
-      <p className="text-xs text-[#3d2d5a] italic font-mono">
-        No steps yet — press Solve.
-      </p>
-    )
-  }
-
-  const stepColors = ['text-[#744cae]', 'text-[#744cae]', 'text-[#7a52b8]', 'text-[#a78bde]', 'text-[#b892e8]']
-
   return (
-    <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
-      {steps.map((step, i) => {
-        const age = steps.length - 1 - i
-        const colorClass = stepColors[Math.min(age, stepColors.length - 1)]
-        const isNewest = age === 0
-        return (
-          <div
-            key={i}
-            className={cn(
-              'rounded px-2 py-1.5 text-[11px] font-mono leading-snug transition-colors',
-              isNewest ? 'bg-[#b892e8]/10 border border-[#b892e8]/30' : 'bg-[#1a1428]',
-            )}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] text-[#3d2d5a] uppercase tracking-widest">
+          {steps.length} step{steps.length !== 1 ? 's' : ''}
+        </span>
+        {steps.length > 0 && (
+          <button
+            onClick={clearSteps}
+            className="text-[10px] text-[#6b4d8a] hover:text-[#a78bde] transition-colors"
           >
-            <span className="text-[#3d2d5a] text-[10px]">{step.time} </span>
-            <span className={colorClass}>{step.text}</span>
-          </div>
-        )
-      })}
-      <div ref={bottomRef} />
+            Clear
+          </button>
+        )}
+      </div>
+
+      {steps.length === 0 ? (
+        <p className="text-xs text-[#3d2d5a] italic font-mono">
+          No steps yet — press Solve.
+        </p>
+      ) : (
+        <div ref={containerRef} className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
+          {steps.map((step, i) => {
+            const isNewest = i === steps.length - 1
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'rounded px-2 py-1.5 text-[11px] font-mono leading-snug transition-colors',
+                  isNewest ? 'bg-[#b892e8]/10 border border-[#b892e8]/30' : 'bg-[#1a1428]',
+                )}
+              >
+                <span className="text-[#3d2d5a] text-[10px]">{step.time} </span>
+                <span className="text-[#a78bde]">{step.text}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -237,7 +248,7 @@ function ModeSwitcher({ active, setActive }: { active: ModeKey; setActive: (m: M
             {mode.label}
           </button>
           {!mode.available && (
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex whitespace-nowrap">
+            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
               <span className="bg-[#1e1630] border border-[#2a1f3d] text-[#a78bde] text-[10px] px-2 py-1 rounded-md shadow-lg">
                 Coming Soon
               </span>

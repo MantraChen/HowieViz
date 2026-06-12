@@ -71,6 +71,7 @@ interface KnapsackStore {
   setSpeed: (s: AnimationSpeed) => void
   solve: () => void
   reset: () => void
+  clearSteps: () => void
   runBenchmark: () => void
 }
 
@@ -186,13 +187,15 @@ export const useKnapsackStore = create<KnapsackStore>((set, get) => ({
           isDone: snap.phase === 'done',
           statusText: snap.stepText || prev.statusText,
           steps: snap.stepText
-            ? [...prev.steps, { time, text: snap.stepText }].slice(-5)
+            ? [...prev.steps, { time, text: snap.stepText }]
             : prev.steps,
         }))
       }, i * delay)
       animTimers.push(t)
     })
   },
+
+  clearSteps: () => set({ steps: [] }),
 
   reset: () => {
     cancelAnim()

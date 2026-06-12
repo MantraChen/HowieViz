@@ -47,50 +47,78 @@ export function KnapsackVisualizer() {
             </tr>
           </thead>
           <tbody>
-            {table.map((row, i) => (
-              <tr key={i}>
-                <td className="text-right pr-2 text-[#6b4d8a] text-xs whitespace-nowrap">
-                  {i === 0 ? '∅' : `i${i}(w${items[i - 1]?.weight},v${items[i - 1]?.value})`}
-                </td>
-                {row.map((val, j) => {
-                  const isActive = i === activeRow && j === activeCol
-                  const isBacktrack = phase === 'backtrack' && isActive
-                  const isDone = phase === 'done'
+            {table.map((row, i) => {
+              const isSelectedRow = i > 0 && selectedItems[i - 1]
+              return (
+                <tr key={i} style={isSelectedRow ? { borderLeft: '3px solid #744cae' } : undefined}>
+                  <td className="text-right pr-2 text-[#6b4d8a] text-xs whitespace-nowrap">
+                    {i === 0 ? '∅' : `i${i}(w${items[i - 1]?.weight},v${items[i - 1]?.value})`}
+                  </td>
+                  {row.map((val, j) => {
+                    const isActive = i === activeRow && j === activeCol
+                    const isBacktrack = phase === 'backtrack' && isActive
+                    const isDone = phase === 'done'
 
-                  let bg = '#0f0b17'
-                  let border = '#2a1f3d'
-                  let color = '#a78bde'
+                    let bg = '#0f0b17'
+                    let border = '#2a1f3d'
+                    let color = '#a78bde'
 
-                  if (isActive && phase === 'fill') {
-                    bg = '#9b6fd4'; color = '#fff'; border = '#c9a0ff'
-                  } else if (isBacktrack) {
-                    bg = '#ff6b8a22'; border = '#ff6b8a'; color = '#ff6b8a'
-                  } else if (isDone && i > 0 && selectedItems[i - 1] && j === W) {
-                    bg = '#c9a0ff22'; border = '#c9a0ff'; color = '#c9a0ff'
-                  }
+                    if (isActive && phase === 'fill') {
+                      bg = '#9b6fd4'; color = '#fff'; border = '#c9a0ff'
+                    } else if (isBacktrack) {
+                      bg = '#c9a0ff'; border = '#9b6fd4'; color = '#1a0a2e'
+                    } else if (isDone && i > 0 && selectedItems[i - 1] && j === W) {
+                      bg = '#c9a0ff22'; border = '#c9a0ff'; color = '#c9a0ff'
+                    }
 
-                  return (
-                    <td
-                      key={j}
-                      style={{
-                        width: cellW,
-                        height: cellH,
-                        textAlign: 'center',
-                        background: bg,
-                        border: `1px solid ${border}`,
-                        color,
-                        fontWeight: isActive || isBacktrack ? 'bold' : 'normal',
-                        transition: 'background 0.15s, border-color 0.15s',
-                      }}
-                    >
-                      {val}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
+                    return (
+                      <td
+                        key={j}
+                        style={{
+                          width: cellW,
+                          height: cellH,
+                          textAlign: 'center',
+                          background: bg,
+                          border: `1px solid ${border}`,
+                          color,
+                          fontWeight: isActive || isBacktrack ? 'bold' : 'normal',
+                          transition: 'background 0.15s, border-color 0.15s',
+                        }}
+                      >
+                        {val}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
+      </div>
+
+      {/* Color legend */}
+      <div className="flex flex-wrap gap-3 px-1">
+        {[
+          { label: 'Default', bg: '#0f0b17', border: '#2a1f3d', color: '#a78bde' },
+          { label: 'Active', bg: '#9b6fd4', border: '#c9a0ff', color: '#fff' },
+          { label: 'Backtrack', bg: '#c9a0ff', border: '#9b6fd4', color: '#1a0a2e' },
+          { label: 'Done', bg: '#c9a0ff22', border: '#c9a0ff', color: '#c9a0ff' },
+        ].map(({ label, bg, border, color }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <span
+              style={{
+                display: 'inline-block',
+                width: 14,
+                height: 14,
+                background: bg,
+                border: `1px solid ${border}`,
+                borderRadius: 2,
+                flexShrink: 0,
+              }}
+            />
+            <span className="text-[10px] text-[#6b4d8a] font-mono">{label}</span>
+          </div>
+        ))}
       </div>
 
       {(phase === 'backtrack' || phase === 'done') && selectedItems.some(Boolean) && (
