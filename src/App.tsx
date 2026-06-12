@@ -31,6 +31,11 @@ import { FloydWarshallPage } from '@/pages/FloydWarshallPage'
 import { TopoSortPage } from '@/pages/TopoSortPage'
 import { PrimsPage } from '@/pages/PrimsPage'
 import { KruskalsPage } from '@/pages/KruskalsPage'
+import { RBTreePage } from '@/pages/RBTreePage'
+import { FibPage } from '@/pages/FibPage'
+import { KnapsackPage } from '@/pages/KnapsackPage'
+import { LCSPage } from '@/pages/LCSPage'
+import { EditDistancePage } from '@/pages/EditDistancePage'
 
 export default function App() {
   return (
@@ -67,6 +72,11 @@ export default function App() {
         <Route path="visualizer/topological-sort" element={<TopoSortPage />} />
         <Route path="visualizer/prims" element={<PrimsPage />} />
         <Route path="visualizer/kruskals" element={<KruskalsPage />} />
+        <Route path="visualizer/red-black-tree" element={<RBTreePage />} />
+        <Route path="visualizer/fibonacci" element={<FibPage />} />
+        <Route path="visualizer/knapsack" element={<KnapsackPage />} />
+        <Route path="visualizer/lcs" element={<LCSPage />} />
+        <Route path="visualizer/edit-distance" element={<EditDistancePage />} />
       </Route>
     </Routes>
   )

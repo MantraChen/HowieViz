@@ -1,4 +1,4 @@
-export type VisualizerCategory = 'linear' | 'tree' | 'graph' | 'sorting' | 'searching'
+export type VisualizerCategory = 'linear' | 'tree' | 'graph' | 'sorting' | 'searching' | 'dp'
 
 export interface NavItem {
   label: string

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { LayoutList, GitBranch, Network, ArrowUpDown, Search, ChevronRight } from 'lucide-react'
+import { LayoutList, GitBranch, Network, ArrowUpDown, Search, ChevronRight, BrainCircuit } from 'lucide-react'
 
 const CATEGORIES = [
   {
@@ -27,6 +27,7 @@ const CATEGORIES = [
       { label: 'Trie',               path: '/visualizer/trie',         ready: true },
       { label: 'Segment Tree',       path: '/visualizer/segment-tree', ready: true },
       { label: 'Fenwick Tree / BIT', path: '/visualizer/fenwick-tree', ready: true },
+      { label: 'Red-Black Tree',     path: '/visualizer/red-black-tree', ready: true },
     ],
   },
   {
@@ -65,6 +66,17 @@ const CATEGORIES = [
     items: [
       { label: 'Binary Search', path: '/visualizer/binary-search', ready: true },
       { label: 'Linear Search', path: '/visualizer/linear-search', ready: true },
+    ],
+  },
+  {
+    icon: BrainCircuit,
+    title: 'Dynamic Programming',
+    description: 'Memoization, tabulation, and optimal substructure — watch DP tables fill in real time.',
+    items: [
+      { label: 'Fibonacci (Memoization)', path: '/visualizer/fibonacci',      ready: true },
+      { label: '0/1 Knapsack',            path: '/visualizer/knapsack',        ready: true },
+      { label: 'LCS',                     path: '/visualizer/lcs',             ready: true },
+      { label: 'Edit Distance',           path: '/visualizer/edit-distance',   ready: true },
     ],
   },
 ]

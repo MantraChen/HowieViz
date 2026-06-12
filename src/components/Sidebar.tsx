@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import type { NavItem } from '@/types'
-import { LayoutList, GitBranch, Network, ArrowUpDown, Search, Home, ChevronRight } from 'lucide-react'
+import { LayoutList, GitBranch, Network, ArrowUpDown, Search, Home, ChevronRight, BrainCircuit } from 'lucide-react'
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Array',               path: '/visualizer/array',           category: 'linear',    description: '' },
@@ -35,6 +35,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Radix Sort',          path: '/visualizer/radix-sort',      category: 'sorting',   description: '' },
   { label: 'Binary Search',       path: '/visualizer/binary-search',   category: 'searching', description: '' },
   { label: 'Linear Search',       path: '/visualizer/linear-search',   category: 'searching', description: '' },
+  { label: 'Red-Black Tree',      path: '/visualizer/red-black-tree',  category: 'tree',      description: '' },
+  { label: 'Fibonacci (Memo)',    path: '/visualizer/fibonacci',       category: 'dp',        description: '' },
+  { label: '0/1 Knapsack',        path: '/visualizer/knapsack',        category: 'dp',        description: '' },
+  { label: 'LCS',                 path: '/visualizer/lcs',             category: 'dp',        description: '' },
+  { label: 'Edit Distance',       path: '/visualizer/edit-distance',   category: 'dp',        description: '' },
 ]
 
 const CATEGORY_ICONS = {
@@ -43,6 +48,7 @@ const CATEGORY_ICONS = {
   graph:     Network,
   sorting:   ArrowUpDown,
   searching: Search,
+  dp:        BrainCircuit,
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -51,9 +57,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   graph:     'Graphs',
   sorting:   'Sorting',
   searching: 'Searching',
+  dp:        'Dynamic Programming',
 }
 
-const CATEGORY_ORDER = ['linear', 'tree', 'graph', 'sorting', 'searching']
+const CATEGORY_ORDER = ['linear', 'tree', 'graph', 'sorting', 'searching', 'dp']
 
 const grouped = NAV_ITEMS.reduce<Record<string, NavItem[]>>((acc, item) => {
   if (!acc[item.category]) acc[item.category] = []
