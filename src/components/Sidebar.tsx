@@ -10,6 +10,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Queue',               path: '/visualizer/queue',           category: 'linear',    description: '' },
   { label: 'Linked List',         path: '/visualizer/linked-list',     category: 'linear',    description: '' },
   { label: 'Doubly Linked List',  path: '/visualizer/doubly-linked-list', category: 'linear', description: '' },
+  { label: 'Circular Queue',      path: '/visualizer/circular-queue',     category: 'linear', description: '' },
+  { label: 'Deque',               path: '/visualizer/deque',              category: 'linear', description: '' },
   { label: 'Binary Heap',         path: '/visualizer/binary-heap',     category: 'tree',      description: '' },
   { label: 'BST',                 path: '/visualizer/bst',             category: 'tree',      description: '' },
   { label: 'AVL Tree',            path: '/visualizer/avl-tree',        category: 'tree',      description: '' },
@@ -24,7 +26,10 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Heap Sort',           path: '/visualizer/heap-sort',       category: 'sorting',   description: '' },
   { label: 'Bubble Sort',         path: '/visualizer/bubble-sort',     category: 'sorting',   description: '' },
   { label: 'Insertion Sort',      path: '/visualizer/insertion-sort',  category: 'sorting',   description: '' },
+  { label: 'Counting Sort',       path: '/visualizer/counting-sort',   category: 'sorting',   description: '' },
+  { label: 'Radix Sort',          path: '/visualizer/radix-sort',      category: 'sorting',   description: '' },
   { label: 'Binary Search',       path: '/visualizer/binary-search',   category: 'searching', description: '' },
+  { label: 'Linear Search',       path: '/visualizer/linear-search',   category: 'searching', description: '' },
 ]
 
 const CATEGORY_ICONS = {

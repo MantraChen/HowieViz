@@ -12,6 +12,8 @@ const CATEGORIES = [
       { label: 'Queue',              path: '/visualizer/queue',              ready: true },
       { label: 'Linked List',        path: '/visualizer/linked-list',        ready: true },
       { label: 'Doubly Linked List', path: '/visualizer/doubly-linked-list', ready: true },
+      { label: 'Circular Queue',     path: '/visualizer/circular-queue',     ready: true },
+      { label: 'Deque',              path: '/visualizer/deque',              ready: true },
     ],
   },
   {
@@ -47,14 +49,17 @@ const CATEGORIES = [
       { label: 'Heap Sort',      path: '/visualizer/heap-sort',      ready: true },
       { label: 'Bubble Sort',    path: '/visualizer/bubble-sort',    ready: true },
       { label: 'Insertion Sort', path: '/visualizer/insertion-sort', ready: true },
+      { label: 'Counting Sort', path: '/visualizer/counting-sort',  ready: true },
+      { label: 'Radix Sort',    path: '/visualizer/radix-sort',     ready: true },
     ],
   },
   {
     icon: Search,
     title: 'Searching',
-    description: 'Binary search and advanced search techniques visualized.',
+    description: 'Binary search and linear search techniques visualized.',
     items: [
       { label: 'Binary Search', path: '/visualizer/binary-search', ready: true },
+      { label: 'Linear Search', path: '/visualizer/linear-search', ready: true },
     ],
   },
 ]

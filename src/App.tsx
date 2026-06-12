@@ -21,6 +21,11 @@ import { UnionFindPage } from '@/pages/UnionFindPage'
 import { TriePage } from '@/pages/TriePage'
 import { SegmentTreePage } from '@/pages/SegmentTreePage'
 import { FenwickPage } from '@/pages/FenwickPage'
+import { CircularQueuePage } from '@/pages/CircularQueuePage'
+import { DequePage } from '@/pages/DequePage'
+import { LinearSearchPage } from '@/pages/LinearSearchPage'
+import { CountingSortPage } from '@/pages/CountingSortPage'
+import { RadixSortPage } from '@/pages/RadixSortPage'
 
 export default function App() {
   return (
@@ -30,6 +35,8 @@ export default function App() {
         <Route path="visualizer/array" element={<ArrayPage />} />
         <Route path="visualizer/stack" element={<StackPage />} />
         <Route path="visualizer/queue" element={<QueuePage />} />
+        <Route path="visualizer/circular-queue" element={<CircularQueuePage />} />
+        <Route path="visualizer/deque" element={<DequePage />} />
         <Route path="visualizer/linked-list" element={<LinkedListPage />} />
         <Route path="visualizer/doubly-linked-list" element={<DoublyLinkedListPage />} />
         <Route path="visualizer/binary-heap" element={<HeapPage />} />
@@ -41,7 +48,10 @@ export default function App() {
         <Route path="visualizer/heap-sort" element={<HeapSortPage />} />
         <Route path="visualizer/bubble-sort" element={<BubbleSortPage />} />
         <Route path="visualizer/insertion-sort" element={<InsertionSortPage />} />
+        <Route path="visualizer/counting-sort" element={<CountingSortPage />} />
+        <Route path="visualizer/radix-sort" element={<RadixSortPage />} />
         <Route path="visualizer/binary-search" element={<BinarySearchPage />} />
+        <Route path="visualizer/linear-search" element={<LinearSearchPage />} />
         <Route path="visualizer/dijkstra" element={<DijkstraPage />} />
         <Route path="visualizer/union-find" element={<UnionFindPage />} />
         <Route path="visualizer/trie" element={<TriePage />} />
