@@ -13,6 +13,7 @@ export interface CSStep {
   outputArray: CSOutputCell[]
   phase: 0 | 1 | 2 | 3
   description: string
+  currentLine?: number
 }
 
 export interface StepEntry {
@@ -57,6 +58,7 @@ function generateSteps(arr: number[]): CSStep[] {
     outputHL: CSHighlight[],
     phase: 1 | 2 | 3,
     desc: string,
+    currentLine?: number,
   ) => {
     steps.push({
       inputElements: arr.map((v, i) => ({ value: v, highlight: inputHL[i] ?? 'default' })),
@@ -64,10 +66,11 @@ function generateSteps(arr: number[]): CSStep[] {
       outputArray: output.map((v, i) => ({ value: v, highlight: outputHL[i] ?? 'default' })),
       phase,
       description: desc,
+      currentLine,
     })
   }
 
-  snap(hl(n), hl(MAX_VAL + 1), hl(n), 1, 'Phase 1: Count occurrences of each value')
+  snap(hl(n), hl(MAX_VAL + 1), hl(n), 1, 'Phase 1: Count occurrences of each value', 2)
 
   // Phase 1: Count
   for (let i = 0; i < n; i++) {
@@ -76,13 +79,13 @@ function generateSteps(arr: number[]): CSStep[] {
       j < i ? 'sorted' : j === i ? 'active' : 'default',
     )
     const cHL: CSHighlight[] = count.map((_, j) => (j === v ? 'active' : 'default'))
-    snap(iHL, cHL, hl(n), 1, `arr[${i}] = ${v} → count[${v}]++  (now ${count[v] + 1})`)
+    snap(iHL, cHL, hl(n), 1, `arr[${i}] = ${v} → count[${v}]++  (now ${count[v] + 1})`, 3)
     count[v]++
   }
-  snap(hl(n, 'sorted'), hl(MAX_VAL + 1), hl(n), 1, 'Phase 1 complete — all values counted')
+  snap(hl(n, 'sorted'), hl(MAX_VAL + 1), hl(n), 1, 'Phase 1 complete — all values counted', 3)
 
   // Phase 2: Cumulative prefix sums
-  snap(hl(n, 'sorted'), hl(MAX_VAL + 1), hl(n), 2, 'Phase 2: Convert counts to prefix sums')
+  snap(hl(n, 'sorted'), hl(MAX_VAL + 1), hl(n), 2, 'Phase 2: Convert counts to prefix sums', 4)
   for (let i = 1; i <= MAX_VAL; i++) {
     const sum = count[i] + count[i - 1]
     const cHL: CSHighlight[] = count.map((_, j) =>
@@ -94,13 +97,14 @@ function generateSteps(arr: number[]): CSStep[] {
       hl(n),
       2,
       `count[${i}] = ${count[i]} + count[${i - 1}] = ${sum}`,
+      5,
     )
     count[i] = sum
   }
-  snap(hl(n, 'sorted'), hl(MAX_VAL + 1, 'sorted'), hl(n), 2, 'Phase 2 complete — prefix sums ready')
+  snap(hl(n, 'sorted'), hl(MAX_VAL + 1, 'sorted'), hl(n), 2, 'Phase 2 complete — prefix sums ready', 5)
 
   // Phase 3: Build output (iterate backward for stability)
-  snap(hl(n, 'sorted'), hl(MAX_VAL + 1, 'sorted'), hl(n), 3, 'Phase 3: Place elements into output array')
+  snap(hl(n, 'sorted'), hl(MAX_VAL + 1, 'sorted'), hl(n), 3, 'Phase 3: Place elements into output array', 6)
   for (let i = n - 1; i >= 0; i--) {
     const v = arr[i]
     count[v]--
@@ -113,7 +117,7 @@ function generateSteps(arr: number[]): CSStep[] {
     const oHL: CSHighlight[] = output.map((val, j) =>
       j === pos ? 'placed' : val !== null ? 'counting' : 'default',
     )
-    snap(iHL, cHL, oHL, 3, `arr[${i}] = ${v} → output[${pos}]  (count[${v}] = ${count[v]})`)
+    snap(iHL, cHL, oHL, 3, `arr[${i}] = ${v} → output[${pos}]  (count[${v}] = ${count[v]})`, 7)
   }
   snap(
     hl(n, 'sorted'),
@@ -121,6 +125,7 @@ function generateSteps(arr: number[]): CSStep[] {
     hl(n, 'sorted'),
     3,
     'Array sorted!',
+    8,
   )
 
   return steps
@@ -148,6 +153,7 @@ interface CountingSortState {
   snaps: CSStep[]
   snapIndex: number
   steps: StepEntry[]
+  currentLine: number
   setArraySize: (n: number) => void
   setSpeed: (s: AnimationSpeed) => void
   randomize: () => void
@@ -171,6 +177,7 @@ export const useCountingSortStore = create<CountingSortState>((set, get) => ({
   snaps: [],
   snapIndex: -1,
   steps: [],
+  currentLine: 0,
 
   setArraySize: n => {
     cancelAll()
@@ -234,6 +241,7 @@ export const useCountingSortStore = create<CountingSortState>((set, get) => ({
           isAnimating: i < snaps.length - 1,
           isSorted: i === snaps.length - 1,
           statusText: snap.description,
+          currentLine: snap.currentLine ?? 0,
           steps: snap.description
             ? [...prev.steps, { time, text: snap.description }]
             : prev.steps,
@@ -274,6 +282,7 @@ export const useCountingSortStore = create<CountingSortState>((set, get) => ({
       step: snap,
       statusText: snap.description,
       isSorted: newIdx === snaps.length - 1,
+      currentLine: snap.currentLine ?? 0,
       steps: snap.description
         ? [...prev.steps, { time, text: snap.description }]
         : prev.steps,
@@ -290,6 +299,7 @@ export const useCountingSortStore = create<CountingSortState>((set, get) => ({
       step: snap,
       statusText: snap.description,
       isSorted: false,
+      currentLine: snap.currentLine ?? 0,
     })
   },
 

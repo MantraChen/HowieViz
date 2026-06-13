@@ -92,6 +92,7 @@ interface LinearSearchState {
   isAnimating: boolean
   isDone: boolean
   speed: AnimationSpeed
+  currentLine: number
   setTarget: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   randomize: () => void
@@ -109,6 +110,7 @@ export const useLinearSearchStore = create<LinearSearchState>((set, get) => ({
   isAnimating: false,
   isDone: false,
   speed: 'normal',
+  currentLine: 0,
 
   setTarget: v => set({ target: v }),
   setSpeed: s => set({ speed: s }),

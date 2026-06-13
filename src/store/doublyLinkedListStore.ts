@@ -31,6 +31,7 @@ interface DLLStore {
   inputIndex: string
   isSearching: boolean
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setInputIndex: (v: string) => void
@@ -62,6 +63,7 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
   inputIndex: '',
   isSearching: false,
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: v => set({ inputValue: v }),
@@ -89,8 +91,10 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
         ...state.nodes.map(n => ({ ...n, highlight: 'default' as const })),
       ],
       statusText: `Inserted ${value} at head`,
+      currentLine: 4,
       steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at head` }],
     }))
+    setTimeout(() => useDLLStore.setState({ currentLine: 0 }), 500)
   },
 
   insertTail: value => {
@@ -102,8 +106,10 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
         { id: nanoid(), value, highlight: 'inserted' as const },
       ],
       statusText: `Inserted ${value} at tail`,
+      currentLine: 8,
       steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at tail` }],
     }))
+    setTimeout(() => useDLLStore.setState({ currentLine: 0 }), 500)
   },
 
   insertAt: (index, value) => {
@@ -116,9 +122,11 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Inserted ${value} at index ${clamped}`,
+        currentLine: 4,
         steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at index ${clamped}` }],
       }
     })
+    setTimeout(() => useDLLStore.setState({ currentLine: 0 }), 500)
   },
 
   deleteHead: () => {
@@ -132,9 +140,11 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Deleted ${headVal} from head`,
+        currentLine: 11,
         steps: [...state.steps, { time: nowTime(), text: `Deleted ${headVal} from head` }],
       }
     })
+    setTimeout(() => useDLLStore.setState({ currentLine: 0 }), 500)
   },
 
   deleteTail: () => {
@@ -148,9 +158,11 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Deleted ${tailVal} from tail`,
+        currentLine: 11,
         steps: [...state.steps, { time: nowTime(), text: `Deleted ${tailVal} from tail` }],
       }
     })
+    setTimeout(() => useDLLStore.setState({ currentLine: 0 }), 500)
   },
 
   deleteAt: index => {
@@ -166,9 +178,11 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Deleted ${val} at index ${index}`,
+        currentLine: 11,
         steps: [...state.steps, { time: nowTime(), text: `Deleted ${val} at index ${index}` }],
       }
     })
+    setTimeout(() => useDLLStore.setState({ currentLine: 0 }), 500)
   },
 
   search: value => {
@@ -180,6 +194,7 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
     set(state => ({
       isSearching: true,
       statusText: `Searching for ${value}…`,
+      currentLine: 13,
       steps: [...state.steps, { time: nowTime(), text: `Searching for ${value}` }],
     }))
 
@@ -204,6 +219,7 @@ export const useDLLStore = create<DLLStore>((set, get) => ({
             if (searchId !== currentId) return
             set(s => ({
               isSearching: false,
+              currentLine: 0,
               nodes: s.nodes.map(n => ({ ...n, highlight: 'default' as const })),
             }))
           }, isFound ? delay * 2 : delay)

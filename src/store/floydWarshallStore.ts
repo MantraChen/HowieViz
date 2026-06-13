@@ -211,6 +211,7 @@ interface FloydWarshallStore {
   snaps: FWSnap[]
   snapIndex: number
   statusText: string
+  currentLine: number
   steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
@@ -278,6 +279,7 @@ export const useFloydWarshallStore = create<FloydWarshallStore>((set, get) => ({
   snaps: [],
   snapIndex: -1,
   statusText: 'Ready.',
+  currentLine: 0,
   steps: [],
 
   setSpeed: s => set({ speed: s }),

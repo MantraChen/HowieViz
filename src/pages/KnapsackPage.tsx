@@ -311,7 +311,9 @@ export function KnapsackPage() {
         {/* LEFT COLUMN — visualization + pseudocode + steps */}
         <div className="flex-1 min-w-0 overflow-y-auto p-5 space-y-4">
           {/* DP table visualization */}
-          <KnapsackVisualizer />
+          <div className="max-h-[55vh] overflow-auto">
+            <KnapsackVisualizer />
+          </div>
 
           {/* Pseudocode — collapsed by default */}
           <CollapsibleSection

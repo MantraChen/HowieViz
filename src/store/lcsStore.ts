@@ -31,6 +31,7 @@ interface LCSStore {
   isAnimating: boolean
   isDone: boolean
   speed: AnimationSpeed
+  currentLine: number
   setStr1Input: (v: string) => void
   setStr2Input: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
@@ -49,6 +50,7 @@ export const useLCSStore = create<LCSStore>((set, get) => ({
   isAnimating: false,
   isDone: false,
   speed: 'normal',
+  currentLine: 0,
 
   setStr1Input: v => set({ str1Input: v.toUpperCase().slice(0, 12) }),
   setStr2Input: v => set({ str2Input: v.toUpperCase().slice(0, 12) }),

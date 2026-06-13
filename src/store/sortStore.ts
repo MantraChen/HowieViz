@@ -11,6 +11,7 @@ export interface SortBar {
 export interface SortStep {
   bars: SortBar[]
   description: string
+  currentLine?: number
 }
 
 export interface StepEntry {
@@ -30,6 +31,7 @@ export interface SortState {
   snaps: SortStep[]
   snapIndex: number
   steps: StepEntry[]
+  currentLine: number
   setArraySize: (n: number) => void
   setSpeed: (s: AnimationSpeed) => void
   randomize: () => void
@@ -81,6 +83,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
     snaps: [],
     snapIndex: -1,
     steps: [],
+    currentLine: 0,
 
     setArraySize(n) {
       cancelAll()
@@ -96,6 +99,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
         snaps: [],
         snapIndex: -1,
         steps: [],
+        currentLine: 0,
       })
     },
 
@@ -114,6 +118,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
         snaps: [],
         snapIndex: -1,
         steps: [],
+        currentLine: 0,
       })
     },
 
@@ -128,6 +133,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
         snaps: [],
         snapIndex: -1,
         steps: [],
+        currentLine: 0,
       }))
     },
 
@@ -150,6 +156,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
             statusText: step.description,
             isAnimating: i < stepsArr.length - 1,
             isSorted: i === stepsArr.length - 1,
+            currentLine: step.currentLine ?? 0,
             steps: step.description
               ? [...prev.steps, { time, text: step.description }]
               : prev.steps,
@@ -193,6 +200,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
         description: snap.description,
         statusText: snap.description,
         isSorted: newIdx === snaps.length - 1,
+        currentLine: snap.currentLine ?? 0,
         steps: snap.description
           ? [...prev.steps, { time, text: snap.description }]
           : prev.steps,
@@ -210,6 +218,7 @@ export function createSortStore(generateSteps: (arr: number[]) => SortStep[]) {
         description: snap.description,
         statusText: snap.description,
         isSorted: false,
+        currentLine: snap.currentLine ?? 0,
       })
     },
 

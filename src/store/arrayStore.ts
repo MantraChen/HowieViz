@@ -13,6 +13,7 @@ interface ArrayStore {
   inputIndex: string
   statusText: string
   steps: { time: string; text: string }[]
+  currentLine: number
   setInputValue: (v: string) => void
   setInputIndex: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
@@ -41,6 +42,7 @@ export const useArrayStore = create<ArrayStore>((set, get) => ({
   inputIndex: '',
   statusText: 'Ready — use controls to interact.',
   steps: [],
+  currentLine: 0,
 
   setInputValue: (v) => set({ inputValue: v }),
   setInputIndex: (v) => set({ inputIndex: v }),
@@ -52,7 +54,7 @@ export const useArrayStore = create<ArrayStore>((set, get) => ({
       elements: state.elements.map((el) => ({ ...el, highlight: 'default' as const })),
     })),
 
-  push: (value) =>
+  push: (value) => {
     set((state) => ({
       elements: [
         ...state.elements.map((el) => ({ ...el, highlight: 'default' as const })),
@@ -60,9 +62,12 @@ export const useArrayStore = create<ArrayStore>((set, get) => ({
       ],
       statusText: `Pushed ${value}`,
       steps: [...state.steps, { time: nowTime(), text: `Pushed ${value} to end` }],
-    })),
+      currentLine: 2,
+    }))
+    setTimeout(() => useArrayStore.setState({ currentLine: 0 }), 500)
+  },
 
-  pop: () =>
+  pop: () => {
     set((state) => {
       if (state.elements.length === 0) return state
       const topVal = state.elements[state.elements.length - 1].value
@@ -72,10 +77,13 @@ export const useArrayStore = create<ArrayStore>((set, get) => ({
         elements: updated,
         statusText: `Popped ${topVal}`,
         steps: [...state.steps, { time: nowTime(), text: `Popped ${topVal} from end` }],
+        currentLine: 4,
       }
-    }),
+    })
+    setTimeout(() => useArrayStore.setState({ currentLine: 0 }), 500)
+  },
 
-  insert: (index, value) =>
+  insert: (index, value) => {
     set((state) => {
       const clamped = Math.max(0, Math.min(index, state.elements.length))
       const updated: ArrayElement[] = state.elements.map((el) => ({ ...el, highlight: 'default' as const }))
@@ -84,10 +92,13 @@ export const useArrayStore = create<ArrayStore>((set, get) => ({
         elements: updated,
         statusText: `Inserted ${value} at index ${clamped}`,
         steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at index ${clamped}` }],
+        currentLine: 7,
       }
-    }),
+    })
+    setTimeout(() => useArrayStore.setState({ currentLine: 0 }), 500)
+  },
 
-  remove: (index) =>
+  remove: (index) => {
     set((state) => {
       if (index < 0 || index >= state.elements.length) return state
       const removedVal = state.elements[index].value
@@ -99,8 +110,11 @@ export const useArrayStore = create<ArrayStore>((set, get) => ({
         elements: updated,
         statusText: `Removed ${removedVal} at index ${index}`,
         steps: [...state.steps, { time: nowTime(), text: `Removed ${removedVal} at index ${index}` }],
+        currentLine: 10,
       }
-    }),
+    })
+    setTimeout(() => useArrayStore.setState({ currentLine: 0 }), 500)
+  },
 
   loadCustom: (vals) =>
     set({

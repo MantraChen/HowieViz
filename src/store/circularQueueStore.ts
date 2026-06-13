@@ -21,6 +21,7 @@ interface CQStore {
   capacity: number
   inputValue: string
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setCapacity: (n: number) => void
@@ -47,6 +48,7 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
   capacity: 6,
   inputValue: '',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: v => set({ inputValue: v }),
@@ -67,8 +69,10 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
       rear: (rear + 1) % capacity,
       size: size + 1,
       statusText: `Enqueued ${value} at slot ${rear}`,
+      currentLine: 5,
       steps: [...state.steps, { time: nowTime(), text: `Enqueued ${value} at slot ${rear}` }],
     }))
+    setTimeout(() => useCircularQueueStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useCircularQueueStore.setState(s => ({
         slots: s.slots.map(sl =>
@@ -87,8 +91,10 @@ export const useCircularQueueStore = create<CQStore>((set, get) => ({
     set(state => ({
       slots: ns,
       statusText: `Dequeued ${val} from slot ${front}`,
+      currentLine: 10,
       steps: [...state.steps, { time: nowTime(), text: `Dequeued ${val} from slot ${front}` }],
     }))
+    setTimeout(() => useCircularQueueStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useCircularQueueStore.setState(s => {
         const f = s.front

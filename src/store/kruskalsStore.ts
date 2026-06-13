@@ -221,6 +221,7 @@ interface KruskalsStore {
   done: boolean
   isAnimating: boolean
   speed: AnimationSpeed
+  currentLine: number
 
   setSpeed: (s: AnimationSpeed) => void
   run: () => void
@@ -261,6 +262,7 @@ export const useKruskalsStore = create<KruskalsStore>((set, get) => ({
   done: false,
   isAnimating: false,
   speed: 'normal',
+  currentLine: 0,
 
   setSpeed: s => set({ speed: s }),
 

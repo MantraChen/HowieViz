@@ -36,6 +36,7 @@ interface LinkedListStore {
   inputIndex: string
   isSearching: boolean
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setInputIndex: (v: string) => void
@@ -67,6 +68,7 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
   inputIndex: '',
   isSearching: false,
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: (v) => set({ inputValue: v }),
@@ -94,8 +96,10 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
         ...state.nodes.map((n) => ({ ...n, highlight: 'default' as const })),
       ],
       statusText: `Inserted ${value} at head`,
+      currentLine: 3,
       steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at head` }],
     }))
+    setTimeout(() => useLinkedListStore.setState({ currentLine: 0 }), 500)
   },
 
   insertTail: (value) => {
@@ -107,8 +111,10 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
         { id: nanoid(), value, highlight: 'inserted' as const },
       ],
       statusText: `Inserted ${value} at tail`,
+      currentLine: 6,
       steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at tail` }],
     }))
+    setTimeout(() => useLinkedListStore.setState({ currentLine: 0 }), 500)
   },
 
   insertAt: (index, value) => {
@@ -121,9 +127,11 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Inserted ${value} at index ${clamped}`,
+        currentLine: 3,
         steps: [...state.steps, { time: nowTime(), text: `Inserted ${value} at index ${clamped}` }],
       }
     })
+    setTimeout(() => useLinkedListStore.setState({ currentLine: 0 }), 500)
   },
 
   deleteHead: () => {
@@ -137,9 +145,11 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Deleted ${headVal} from head`,
+        currentLine: 9,
         steps: [...state.steps, { time: nowTime(), text: `Deleted ${headVal} from head` }],
       }
     })
+    setTimeout(() => useLinkedListStore.setState({ currentLine: 0 }), 500)
   },
 
   deleteTail: () => {
@@ -153,9 +163,11 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Deleted ${tailVal} from tail`,
+        currentLine: 9,
         steps: [...state.steps, { time: nowTime(), text: `Deleted ${tailVal} from tail` }],
       }
     })
+    setTimeout(() => useLinkedListStore.setState({ currentLine: 0 }), 500)
   },
 
   deleteAt: (index) => {
@@ -171,9 +183,11 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
         isSearching: false,
         nodes: updated,
         statusText: `Deleted ${val} at index ${index}`,
+        currentLine: 9,
         steps: [...state.steps, { time: nowTime(), text: `Deleted ${val} at index ${index}` }],
       }
     })
+    setTimeout(() => useLinkedListStore.setState({ currentLine: 0 }), 500)
   },
 
   search: (value) => {
@@ -187,6 +201,7 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
     set(state => ({
       isSearching: true,
       statusText: `Searching for ${value}…`,
+      currentLine: 12,
       steps: [...state.steps, { time: nowTime(), text: `Searching for ${value}` }],
     }))
 
@@ -214,6 +229,7 @@ export const useLinkedListStore = create<LinkedListStore>((set, get) => ({
             if (searchId !== currentId) return
             set((s) => ({
               isSearching: false,
+              currentLine: 0,
               nodes: s.nodes.map((n) => ({ ...n, highlight: 'default' as const })),
             }))
           }, isFound ? delay * 2 : delay)

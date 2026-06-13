@@ -18,6 +18,7 @@ interface StackStore {
   inputValue: string
   statusText: string
   steps: { time: string; text: string }[]
+  currentLine: number
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   push: (value: number) => void
@@ -44,6 +45,7 @@ export const useStackStore = create<StackStore>((set, get) => ({
   inputValue: '',
   statusText: 'Ready — use controls to interact.',
   steps: [],
+  currentLine: 0,
 
   setInputValue: (v) => set({ inputValue: v }),
   setSpeed: (s) => set({ speed: s }),
@@ -54,7 +56,7 @@ export const useStackStore = create<StackStore>((set, get) => ({
       elements: state.elements.map((el) => ({ ...el, highlight: 'default' as const })),
     })),
 
-  push: (value) =>
+  push: (value) => {
     set((state) => ({
       elements: [
         ...state.elements.map((el) => ({ ...el, highlight: 'default' as const })),
@@ -62,9 +64,12 @@ export const useStackStore = create<StackStore>((set, get) => ({
       ],
       statusText: `Pushed ${value} onto stack`,
       steps: [...state.steps, { time: nowTime(), text: `Pushed ${value} onto stack` }],
-    })),
+      currentLine: 3,
+    }))
+    setTimeout(() => useStackStore.setState({ currentLine: 0 }), 500)
+  },
 
-  pop: () =>
+  pop: () => {
     set((state) => {
       if (state.elements.length === 0) return state
       const topVal = state.elements[state.elements.length - 1].value
@@ -74,10 +79,13 @@ export const useStackStore = create<StackStore>((set, get) => ({
         elements: updated,
         statusText: `Popped ${topVal} from stack`,
         steps: [...state.steps, { time: nowTime(), text: `Popped ${topVal} from top` }],
+        currentLine: 6,
       }
-    }),
+    })
+    setTimeout(() => useStackStore.setState({ currentLine: 0 }), 500)
+  },
 
-  peek: () =>
+  peek: () => {
     set((state) => {
       if (state.elements.length === 0) return state
       const topVal = state.elements[state.elements.length - 1].value
@@ -87,8 +95,11 @@ export const useStackStore = create<StackStore>((set, get) => ({
         elements: updated,
         statusText: `Peek → top is ${topVal}`,
         steps: [...state.steps, { time: nowTime(), text: `Peek — top value is ${topVal}` }],
+        currentLine: 9,
       }
-    }),
+    })
+    setTimeout(() => useStackStore.setState({ currentLine: 0 }), 500)
+  },
 
   clear: () =>
     set((state) => {

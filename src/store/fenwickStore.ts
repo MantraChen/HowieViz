@@ -75,6 +75,7 @@ interface FWStore {
   updateIdx: string
   updateDelta: string
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
 
   setSpeed: (s: 'slow' | 'normal' | 'fast') => void
@@ -101,6 +102,7 @@ export const useFWStore = create<FWStore>((set, get) => ({
   updateIdx: '',
   updateDelta: '',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setSpeed: s => set({ speed: s }),

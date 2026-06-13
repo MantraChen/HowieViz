@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ChevronDown, PanelRight, X } from 'lucide-react'
 import { LCSVisualizer } from '@/visualizers/LCSVisualizer'
 import { LCSControls } from '@/components/LCSControls'
 import { cn } from '@/lib/utils'
+import { useLCSStore } from '@/store/lcsStore'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -26,15 +27,37 @@ const COMPLEXITY_ROWS = [
 ]
 
 function PseudocodePanel() {
+  const currentLine = useLCSStore(s => s.currentLine ?? 0)
+  const activeRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [currentLine])
+
   return (
     <div className="rounded-lg bg-[#090710] border border-[#2a1f3d] overflow-hidden">
       <div className="overflow-x-auto">
-        {PSEUDOCODE_LINES.map((line, idx) => (
-          <div key={idx} className="flex items-center gap-2 px-3 py-[3px] hover:bg-[#1a1428]">
-            <span className="text-[10px] w-5 text-right flex-none select-none font-mono text-[#3d2d5a]">{idx + 1}</span>
-            <span className="text-[11px] font-mono whitespace-pre text-[#a78bde]">{line}</span>
-          </div>
-        ))}
+        {PSEUDOCODE_LINES.map((line, idx) => {
+          const lineNum = idx + 1
+          const isActive = lineNum === currentLine
+          return (
+            <div
+              key={idx}
+              ref={isActive ? activeRef : undefined}
+              className={cn(
+                'flex items-center gap-2 px-3 py-[3px] transition-colors duration-150',
+                isActive ? 'bg-[#744cae]' : 'hover:bg-[#1a1428]',
+              )}
+            >
+              <span className={cn('text-[10px] w-5 text-right flex-none select-none font-mono', isActive ? 'text-[#e9d5ff]' : 'text-[#3d2d5a]')}>
+                {lineNum}
+              </span>
+              <span className={cn('text-[11px] font-mono whitespace-pre', isActive ? 'text-white font-semibold' : 'text-[#a78bde]')}>
+                {line}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -131,7 +154,9 @@ export function LCSPage() {
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <div className="flex-1 min-w-0 overflow-y-auto p-5 space-y-4">
-          <LCSVisualizer />
+          <div className="max-h-[55vh] overflow-auto">
+            <LCSVisualizer />
+          </div>
           <CollapsibleSection title="Pseudocode" open={pseudocodeOpen} onToggle={() => setPseudocodeOpen(v => !v)}>
             <PseudocodePanel />
           </CollapsibleSection>

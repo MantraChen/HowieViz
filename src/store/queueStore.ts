@@ -18,6 +18,7 @@ interface QueueStore {
   inputValue: string
   statusText: string
   steps: { time: string; text: string }[]
+  currentLine: number
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   enqueue: (value: number) => void
@@ -44,6 +45,7 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
   inputValue: '',
   statusText: 'Ready — use controls to interact.',
   steps: [],
+  currentLine: 0,
 
   setInputValue: (v) => set({ inputValue: v }),
   setSpeed: (s) => set({ speed: s }),
@@ -54,7 +56,7 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
       elements: state.elements.map((el) => ({ ...el, highlight: 'default' as const })),
     })),
 
-  enqueue: (value) =>
+  enqueue: (value) => {
     set((state) => ({
       elements: [
         ...state.elements.map((el) => ({ ...el, highlight: 'default' as const })),
@@ -62,9 +64,12 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
       ],
       statusText: `Enqueued ${value} to rear`,
       steps: [...state.steps, { time: nowTime(), text: `Enqueued ${value} to rear` }],
-    })),
+      currentLine: 2,
+    }))
+    setTimeout(() => useQueueStore.setState({ currentLine: 0 }), 500)
+  },
 
-  dequeue: () =>
+  dequeue: () => {
     set((state) => {
       if (state.elements.length === 0) return state
       const frontVal = state.elements[0].value
@@ -74,10 +79,13 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
         elements: updated,
         statusText: `Dequeued ${frontVal} from front`,
         steps: [...state.steps, { time: nowTime(), text: `Dequeued ${frontVal} from front` }],
+        currentLine: 4,
       }
-    }),
+    })
+    setTimeout(() => useQueueStore.setState({ currentLine: 0 }), 500)
+  },
 
-  peek: () =>
+  peek: () => {
     set((state) => {
       if (state.elements.length === 0) return state
       const frontVal = state.elements[0].value
@@ -87,8 +95,11 @@ export const useQueueStore = create<QueueStore>((set, get) => ({
         elements: updated,
         statusText: `Peek → front is ${frontVal}`,
         steps: [...state.steps, { time: nowTime(), text: `Peek — front value is ${frontVal}` }],
+        currentLine: 7,
       }
-    }),
+    })
+    setTimeout(() => useQueueStore.setState({ currentLine: 0 }), 500)
+  },
 
   clear: () =>
     set((state) => {

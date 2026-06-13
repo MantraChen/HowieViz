@@ -16,6 +16,7 @@ export interface RSStep {
   passNumber: number
   digitPlace: number
   description: string
+  currentLine?: number
 }
 
 export interface StepEntry {
@@ -75,6 +76,7 @@ function generateSteps(arr: number[]): RSStep[] {
       passNumber: passNum,
       digitPlace: place,
       description: `Pass ${passNum}: sorting by ${placeLabel(place)} digit`,
+      currentLine: 3,
     })
 
     const buckets = emptyBuckets()
@@ -93,6 +95,7 @@ function generateSteps(arr: number[]): RSStep[] {
         passNumber: passNum,
         digitPlace: place,
         description: `${current[i]} → bucket[${digit}]  (${placeLabel(place)} digit = ${digit})`,
+        currentLine: 4,
       })
     }
 
@@ -104,6 +107,7 @@ function generateSteps(arr: number[]): RSStep[] {
       passNumber: passNum,
       digitPlace: place,
       description: `Pass ${passNum} complete: collect from buckets 0→9`,
+      currentLine: 5,
     })
 
     passNum++
@@ -116,6 +120,7 @@ function generateSteps(arr: number[]): RSStep[] {
     passNumber: passNum - 1,
     digitPlace: 1,
     description: 'Array sorted!',
+    currentLine: 6,
   })
 
   return steps
@@ -143,6 +148,7 @@ interface RadixSortState {
   snaps: RSStep[]
   snapIndex: number
   steps: StepEntry[]
+  currentLine: number
   setArraySize: (n: number) => void
   setSpeed: (s: AnimationSpeed) => void
   randomize: () => void
@@ -166,6 +172,7 @@ export const useRadixSortStore = create<RadixSortState>((set, get) => ({
   snaps: [],
   snapIndex: -1,
   steps: [],
+  currentLine: 0,
 
   setArraySize: n => {
     cancelAll()
@@ -229,6 +236,7 @@ export const useRadixSortStore = create<RadixSortState>((set, get) => ({
           isAnimating: i < snaps.length - 1,
           isSorted: i === snaps.length - 1,
           statusText: snap.description,
+          currentLine: snap.currentLine ?? 0,
           steps: snap.description
             ? [...prev.steps, { time, text: snap.description }]
             : prev.steps,
@@ -269,6 +277,7 @@ export const useRadixSortStore = create<RadixSortState>((set, get) => ({
       step: snap,
       statusText: snap.description,
       isSorted: newIdx === snaps.length - 1,
+      currentLine: snap.currentLine ?? 0,
       steps: snap.description
         ? [...prev.steps, { time, text: snap.description }]
         : prev.steps,
@@ -285,6 +294,7 @@ export const useRadixSortStore = create<RadixSortState>((set, get) => ({
       step: snap,
       statusText: snap.description,
       isSorted: false,
+      currentLine: snap.currentLine ?? 0,
     })
   },
 

@@ -213,6 +213,7 @@ interface AVLStore {
   isAnimating: boolean
   rotationLabel: string
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
@@ -233,6 +234,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
   isAnimating: false,
   rotationLabel: '',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: v => set({ inputValue: v }),

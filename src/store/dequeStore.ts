@@ -23,6 +23,7 @@ interface DequeStore {
   elements: DequeElement[]
   inputValue: string
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   pushFront: (value: number) => void
@@ -43,6 +44,7 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
   elements: makeElements(DEFAULT_VALUES),
   inputValue: '',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: v => set({ inputValue: v }),
@@ -55,8 +57,10 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
         ...clearDefault(s.elements),
       ],
       statusText: `Push front: ${value}`,
+      currentLine: 3,
       steps: [...s.steps, { time: nowTime(), text: `Pushed ${value} to front` }],
     }))
+    setTimeout(() => useDequeStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useDequeStore.setState(s => ({
         elements: s.elements.map(el =>
@@ -73,8 +77,10 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
         { id: nanoid(), value, highlight: 'push-rear' as DequeHighlight },
       ],
       statusText: `Push rear: ${value}`,
+      currentLine: 5,
       steps: [...s.steps, { time: nowTime(), text: `Pushed ${value} to rear` }],
     }))
+    setTimeout(() => useDequeStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useDequeStore.setState(s => ({
         elements: s.elements.map(el =>
@@ -94,9 +100,11 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
       return {
         elements: updated,
         statusText: `Pop front: ${frontVal}`,
+        currentLine: 7,
         steps: [...s.steps, { time: nowTime(), text: `Popped ${frontVal} from front` }],
       }
     })
+    setTimeout(() => useDequeStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useDequeStore.setState(s => ({
         elements: clearDefault(s.elements.slice(1)),
@@ -114,9 +122,11 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
       return {
         elements: updated,
         statusText: `Pop rear: ${rearVal}`,
+        currentLine: 9,
         steps: [...s.steps, { time: nowTime(), text: `Popped ${rearVal} from rear` }],
       }
     })
+    setTimeout(() => useDequeStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useDequeStore.setState(s => ({
         elements: clearDefault(s.elements.slice(0, -1)),
@@ -134,8 +144,10 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
         highlight: i === 0 ? ('peek' as DequeHighlight) : 'default',
       })),
       statusText: `Peek front → ${frontVal}`,
+      currentLine: 11,
       steps: [...s.steps, { time: nowTime(), text: `Peek front — value is ${frontVal}` }],
     }))
+    setTimeout(() => useDequeStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useDequeStore.setState(s => ({ elements: clearDefault(s.elements) }))
     }, 1000)
@@ -152,8 +164,10 @@ export const useDequeStore = create<DequeStore>((set, get) => ({
           i === s.elements.length - 1 ? ('peek' as DequeHighlight) : 'default',
       })),
       statusText: `Peek rear → ${rearVal}`,
+      currentLine: 13,
       steps: [...s.steps, { time: nowTime(), text: `Peek rear — value is ${rearVal}` }],
     }))
+    setTimeout(() => useDequeStore.setState({ currentLine: 0 }), 500)
     setTimeout(() => {
       useDequeStore.setState(s => ({ elements: clearDefault(s.elements) }))
     }, 1000)

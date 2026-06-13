@@ -116,6 +116,7 @@ interface FibStore {
   currentSnapIdx: number
   isAnimating: boolean
   speed: AnimationSpeed
+  currentLine: number
   setNInput: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
   compute: () => void
@@ -132,6 +133,7 @@ export const useFibStore = create<FibStore>((set, get) => ({
   currentSnapIdx: -1,
   isAnimating: false,
   speed: 'normal',
+  currentLine: 0,
 
   setNInput: v => set({ nInput: v }),
   setSpeed: s => set({ speed: s }),

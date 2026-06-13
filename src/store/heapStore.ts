@@ -61,6 +61,7 @@ interface HeapStore {
   buildInput: string
   isAnimating: boolean
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setBuildInput: (v: string) => void
@@ -106,6 +107,7 @@ export const useHeapStore = create<HeapStore>((set, get) => ({
   buildInput: '',
   isAnimating: false,
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: v => set({ inputValue: v }),

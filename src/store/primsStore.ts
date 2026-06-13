@@ -198,6 +198,7 @@ interface PrimsStore {
   snaps: PrimSnap[]
   snapIndex: number
   statusText: string
+  currentLine: number
   steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
@@ -249,6 +250,7 @@ export const usePrimsStore = create<PrimsStore>((set, get) => ({
   snaps: [],
   snapIndex: -1,
   statusText: 'Ready.',
+  currentLine: 0,
   steps: [],
 
   setSpeed: s => set({ speed: s }),

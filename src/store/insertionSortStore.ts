@@ -15,6 +15,7 @@ function generateSteps(input: number[]): SortStep[] {
         highlight: idx < i ? 'sorted' : idx === i ? 'pivot' : 'default',
       })),
       description: `Insert a[${i}]=${key} into sorted portion [0..${i - 1}]`,
+      currentLine: 1,
     })
 
     let j = i - 1
@@ -29,6 +30,7 @@ function generateSteps(input: number[]): SortStep[] {
             'default',
         })),
         description: `a[${j}]=${a[j]} > ${key}: shift right`,
+        currentLine: 4,
       })
       a[j + 1] = a[j]
       j--
@@ -41,12 +43,14 @@ function generateSteps(input: number[]): SortStep[] {
         highlight: idx <= i ? 'sorted' : 'default',
       })),
       description: `Placed ${key} at index ${j + 1}`,
+      currentLine: 7,
     })
   }
 
   steps.push({
     bars: a.map(v => ({ value: v, highlight: 'sorted' as BarHighlight })),
     description: 'Array is sorted!',
+    currentLine: 8,
   })
 
   return steps

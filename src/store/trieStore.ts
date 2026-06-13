@@ -96,6 +96,7 @@ interface TrieStore {
   wordInput: string
   speed: 'slow' | 'normal' | 'fast'
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
 
   setWordInput: (v: string) => void
@@ -116,6 +117,7 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
   wordInput: '',
   speed: 'normal',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setWordInput: v => set({ wordInput: v }),

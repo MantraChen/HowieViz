@@ -88,6 +88,7 @@ interface STStore {
   updateIdx: string
   updateVal: string
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
 
   setSpeed: (s: 'slow' | 'normal' | 'fast') => void
@@ -114,6 +115,7 @@ export const useSTStore = create<STStore>((set, get) => ({
   updateIdx: '',
   updateVal: '',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setSpeed: s => set({ speed: s }),

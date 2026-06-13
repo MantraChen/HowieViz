@@ -342,6 +342,7 @@ interface RBTreeStore {
   isAnimating: boolean
   rotationLabel: string
   statusText: string
+  currentLine: number
   steps: { time: string; text: string }[]
   setInputValue: (v: string) => void
   setSpeed: (s: AnimationSpeed) => void
@@ -361,6 +362,7 @@ export const useRBTreeStore = create<RBTreeStore>((set, get) => ({
   isAnimating: false,
   rotationLabel: '',
   statusText: 'Ready — use controls to interact.',
+  currentLine: 0,
   steps: [],
 
   setInputValue: v => set({ inputValue: v }),

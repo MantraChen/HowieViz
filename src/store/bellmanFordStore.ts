@@ -177,6 +177,7 @@ interface BellmanFordStore {
   snaps: BFSnap[]
   snapIndex: number
   statusText: string
+  currentLine: number
   steps: Step[]
 
   setSpeed: (s: AnimationSpeed) => void
@@ -236,6 +237,7 @@ export const useBellmanFordStore = create<BellmanFordStore>((set, get) => ({
   snaps: [],
   snapIndex: -1,
   statusText: 'Ready.',
+  currentLine: 0,
   steps: [],
 
   setSpeed: s => set({ speed: s }),

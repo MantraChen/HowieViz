@@ -35,6 +35,7 @@ interface UFStore {
   message: string
   isAnimating: boolean
   speed: AnimationSpeed
+  currentLine: number
   unionX: string
   unionY: string
   findX: string
@@ -93,6 +94,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
   message: '',
   isAnimating: false,
   speed: 'normal',
+  currentLine: 0,
   unionX: '',
   unionY: '',
   findX: '',
