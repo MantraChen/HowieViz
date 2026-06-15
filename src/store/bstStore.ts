@@ -17,6 +17,7 @@ export type NodeMap = Record<string, BSTNode>
 interface Snap {
   nodes: NodeMap
   rootId: string | null
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = {
@@ -131,6 +132,7 @@ function scheduleSnapshots(snapshots: Snap[], delay: number, finalStatus: string
       useBSTStore.setState({
         nodes: snap.nodes,
         rootId: snap.rootId,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })
@@ -219,14 +221,14 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
       visited.push(curId)
       const snap = cloneNodes(nodes)
       for (const id of visited) snap[id] = { ...snap[id], highlight: 'traversing' }
-      snapshots.push({ nodes: snap, rootId })
+      snapshots.push({ nodes: snap, rootId, currentLine: 6 })
 
       const node: BSTNode = nodes[curId]
       if (value === node.value) {
         const foundSnap = cloneNodes(nodes)
         for (const id of visited.slice(0, -1)) foundSnap[id] = { ...foundSnap[id], highlight: 'traversing' }
         foundSnap[curId] = { ...foundSnap[curId], highlight: 'found' }
-        snapshots.push({ nodes: foundSnap, rootId })
+        snapshots.push({ nodes: foundSnap, rootId, currentLine: 7 })
         foundNode = true
         break
       } else if (value < node.value) {
@@ -241,7 +243,7 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
       const lastId = visited[visited.length - 1]
       for (const id of visited.slice(0, -1)) notFoundSnap[id] = { ...notFoundSnap[id], highlight: 'traversing' }
       notFoundSnap[lastId] = { ...notFoundSnap[lastId], highlight: 'notFound' }
-      snapshots.push({ nodes: notFoundSnap, rootId })
+      snapshots.push({ nodes: notFoundSnap, rootId, currentLine: 9 })
     }
 
     snapshots.push({ nodes: cloneNodes(nodes), rootId })
@@ -276,7 +278,10 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
     for (let i = 0; i < path.length; i++) {
       const snap = cloneNodes(nodes)
       for (let j = 0; j <= i; j++) snap[path[j]] = { ...snap[path[j]], highlight: 'traversing' }
-      snapshots.push({ nodes: snap, rootId })
+      const dir = i + 1 < path.length
+        ? (value < nodes[path[i]].value ? 3 : 4)
+        : (value < nodes[path[i]].value ? 3 : 4)
+      snapshots.push({ nodes: snap, rootId, currentLine: dir })
     }
 
     const newNode: BSTNode = { id: nanoid(), value, left: null, right: null, highlight: 'inserted' }
@@ -294,8 +299,8 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
 
     const insertedSnap = cloneNodes(newNodes)
     insertedSnap[newNode.id] = { ...insertedSnap[newNode.id], highlight: 'inserted' }
-    snapshots.push({ nodes: insertedSnap, rootId: newRootId })
-    snapshots.push({ nodes: cloneNodes(newNodes), rootId: newRootId })
+    snapshots.push({ nodes: insertedSnap, rootId: newRootId, currentLine: 2 })
+    snapshots.push({ nodes: cloneNodes(newNodes), rootId: newRootId, currentLine: 2 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Insert: ${value} added to tree` }] })
     scheduleSnapshots(snapshots, delay, `Inserted ${value}`)
@@ -317,7 +322,7 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
       visited.push(curId)
       const snap = cloneNodes(nodes)
       for (const id of visited) snap[id] = { ...snap[id], highlight: 'traversing' }
-      snapshots.push({ nodes: snap, rootId })
+      snapshots.push({ nodes: snap, rootId, currentLine: 6 })
 
       const node: BSTNode = nodes[curId]
       if (value === node.value) { found = true; break }
@@ -329,7 +334,7 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
       const lastSnap = cloneNodes(nodes)
       const lastId = visited[visited.length - 1]
       if (lastId) lastSnap[lastId] = { ...lastSnap[lastId], highlight: 'notFound' }
-      snapshots.push({ nodes: lastSnap, rootId })
+      snapshots.push({ nodes: lastSnap, rootId, currentLine: 9 })
       snapshots.push({ nodes: cloneNodes(nodes), rootId })
       set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} not found` }] })
       scheduleSnapshots(snapshots, delay, `${value} not found`)
@@ -340,10 +345,14 @@ export const useBSTStore = create<BSTStore>((set, get) => ({
     const targetId = visited[visited.length - 1]
     for (const id of visited.slice(0, -1)) delSnap[id] = { ...delSnap[id], highlight: 'traversing' }
     delSnap[targetId] = { ...delSnap[targetId], highlight: 'deleted' }
-    snapshots.push({ nodes: delSnap, rootId })
+    const targetNode = nodes[targetId]
+    const deleteCase = (targetNode.left === null && targetNode.right === null) ? 10
+      : (targetNode.left === null || targetNode.right === null) ? 11
+      : 12
+    snapshots.push({ nodes: delSnap, rootId, currentLine: deleteCase })
 
     const result = deleteRec(nodes, rootId, value)
-    snapshots.push({ nodes: cloneNodes(result.nodes), rootId: result.nodeId })
+    snapshots.push({ nodes: cloneNodes(result.nodes), rootId: result.nodeId, currentLine: deleteCase })
 
     set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} removed from tree` }] })
     scheduleSnapshots(snapshots, delay, `Deleted ${value}`)

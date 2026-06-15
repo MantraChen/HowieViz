@@ -19,6 +19,7 @@ interface Snap {
   nodes: AVLNodeMap
   rootId: string | null
   rotationLabel?: string
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 700, normal: 350, fast: 130 }
@@ -197,6 +198,7 @@ function scheduleSnaps(snaps: Snap[], delay: number, finalStatus: string) {
         nodes: snap.nodes,
         rootId: snap.rootId,
         rotationLabel: snap.rotationLabel ?? '',
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })
@@ -287,13 +289,13 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
       visited.push(curId)
       const snap = cloneNodes(nodes)
       for (const id of visited) snap[id] = { ...snap[id], highlight: 'traversing' }
-      snaps.push({ nodes: snap, rootId })
+      snaps.push({ nodes: snap, rootId, currentLine: 6 })
       const node: AVLNode = nodes[curId]
       if (value === node.value) {
         const fs = cloneNodes(nodes)
         for (const id of visited.slice(0, -1)) fs[id] = { ...fs[id], highlight: 'traversing' }
         fs[curId] = { ...fs[curId], highlight: 'found' }
-        snaps.push({ nodes: fs, rootId })
+        snaps.push({ nodes: fs, rootId, currentLine: 7 })
         foundNode = true
         break
       }
@@ -305,7 +307,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
       const last = visited[visited.length - 1]
       for (const id of visited.slice(0, -1)) nfs[id] = { ...nfs[id], highlight: 'traversing' }
       nfs[last] = { ...nfs[last], highlight: 'notFound' }
-      snaps.push({ nodes: nfs, rootId })
+      snaps.push({ nodes: nfs, rootId, currentLine: 9 })
     }
 
     snaps.push({ nodes: cloneNodes(nodes), rootId })
@@ -334,7 +336,8 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     for (let i = 0; i < path.length; i++) {
       const snap = cloneNodes(nodes)
       for (let j = 0; j <= i; j++) snap[path[j]] = { ...snap[path[j]], highlight: 'traversing' }
-      snaps.push({ nodes: snap, rootId })
+      const dir = value < nodes[path[i]].value ? 3 : 4
+      snaps.push({ nodes: snap, rootId, currentLine: dir })
     }
 
     const newNode: AVLNode = { id: nanoid(), value, left: null, right: null, height: 1, highlight: 'inserted' }
@@ -353,7 +356,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
 
     const ins = cloneNodes(n)
     ins[newNode.id] = { ...ins[newNode.id], highlight: 'inserted' }
-    snaps.push({ nodes: ins, rootId: newRootId })
+    snaps.push({ nodes: ins, rootId: newRootId, currentLine: 2 })
 
     for (let i = path.length - 1; i >= 0; i--) {
       const nodeId = path[i]
@@ -366,7 +369,12 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
         const childId = balance > 1 ? n[nodeId].left : n[nodeId].right
         if (childId && n[childId]) pre[childId] = { ...pre[childId], highlight: 'rotating' }
         const result = rebalance(n, nodeId)
-        snaps.push({ nodes: pre, rootId: newRootId, rotationLabel: result.rotationType })
+        const rotLine = result.rotationType?.includes('Left-Right') ? 6
+          : result.rotationType?.includes('Right-Left') ? 9
+          : result.rotationType?.includes('Right Rotation') ? 5
+          : result.rotationType?.includes('Left Rotation') ? 8
+          : 2
+        snaps.push({ nodes: pre, rootId: newRootId, rotationLabel: result.rotationType, currentLine: rotLine })
 
         n = result.nodes
         if (i > 0) {
@@ -380,12 +388,12 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
           newRootId = result.newRoot
         }
 
-        snaps.push({ nodes: cloneNodes(n), rootId: newRootId, rotationLabel: result.rotationType })
+        snaps.push({ nodes: cloneNodes(n), rootId: newRootId, rotationLabel: result.rotationType, currentLine: rotLine })
         break
       }
     }
 
-    snaps.push({ nodes: cloneNodes(n), rootId: newRootId })
+    snaps.push({ nodes: cloneNodes(n), rootId: newRootId, currentLine: 10 })
     set({ steps: [...steps, { time: nowTime(), text: `Insert: ${value} added (self-balanced)` }] })
     scheduleSnaps(snaps, delay, `Inserted ${value}`)
   },
@@ -405,7 +413,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
       visited.push(curId)
       const snap = cloneNodes(nodes)
       for (const id of visited) snap[id] = { ...snap[id], highlight: 'traversing' }
-      snaps.push({ nodes: snap, rootId })
+      snaps.push({ nodes: snap, rootId, currentLine: 2 })
       const node: AVLNode = nodes[curId]
       if (value === node.value) { found = true; break }
       cur = value < node.value ? node.left : node.right
@@ -415,7 +423,7 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
       const nfs = cloneNodes(nodes)
       const last = visited[visited.length - 1]
       if (last) nfs[last] = { ...nfs[last], highlight: 'notFound' }
-      snaps.push({ nodes: nfs, rootId })
+      snaps.push({ nodes: nfs, rootId, currentLine: 9 })
       snaps.push({ nodes: cloneNodes(nodes), rootId })
       set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} not found` }] })
       scheduleSnaps(snaps, delay, `${value} not found`)
@@ -426,10 +434,10 @@ export const useAVLStore = create<AVLStore>((set, get) => ({
     const targetId = visited[visited.length - 1]
     for (const id of visited.slice(0, -1)) del[id] = { ...del[id], highlight: 'traversing' }
     del[targetId] = { ...del[targetId], highlight: 'deleted' }
-    snaps.push({ nodes: del, rootId })
+    snaps.push({ nodes: del, rootId, currentLine: 2 })
 
     const result = deleteRaw(nodes, rootId, value)
-    snaps.push({ nodes: cloneNodes(result.nodes), rootId: result.rootId })
+    snaps.push({ nodes: cloneNodes(result.nodes), rootId: result.rootId, currentLine: 10 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Delete: ${value} removed (rebalanced)` }] })
     scheduleSnaps(snaps, delay, `Deleted ${value}`)

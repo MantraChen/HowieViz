@@ -22,6 +22,7 @@ interface Snap {
   nodes: RBNodeMap
   rootId: string | null
   rotationLabel?: string
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 700, normal: 350, fast: 130 }
@@ -151,7 +152,7 @@ class RBTree {
     for (let i = 0; i < path.length; i++) {
       const snap = cloneNodes(this.nodes)
       for (let j = 0; j <= i; j++) snap[path[j]] = { ...snap[path[j]], highlight: 'traversing' }
-      snaps.push({ nodes: snap, rootId: this.rootId })
+      snaps.push({ nodes: snap, rootId: this.rootId, currentLine: 2 })
     }
 
     const newNode = makeNode(value, this.nilId)
@@ -172,10 +173,10 @@ class RBTree {
 
     const insSnap = cloneNodes(this.nodes)
     insSnap[newNode.id] = { ...insSnap[newNode.id], highlight: 'inserted' }
-    snaps.push({ nodes: insSnap, rootId: this.rootId })
+    snaps.push({ nodes: insSnap, rootId: this.rootId, currentLine: 2 })
 
     snaps.push(...this.fixInsert(newNode.id))
-    snaps.push(this.snapshot())
+    snaps.push({ ...this.snapshot(), currentLine: 7 })
     return snaps
   }
 
@@ -194,22 +195,22 @@ class RBTree {
           recolorSnap[parent] = { ...recolorSnap[parent], highlight: 'recoloring' }
           recolorSnap[uncle] = { ...recolorSnap[uncle], highlight: 'recoloring' }
           recolorSnap[grandparent] = { ...recolorSnap[grandparent], highlight: 'recoloring' }
-          snaps.push({ nodes: recolorSnap, rootId: this.rootId, rotationLabel: 'Recolor' })
+          snaps.push({ nodes: recolorSnap, rootId: this.rootId, rotationLabel: 'Recolor', currentLine: 4 })
 
           this.nodes[parent] = { ...this.nodes[parent], color: 'black' }
           this.nodes[uncle] = { ...this.nodes[uncle], color: 'black' }
           this.nodes[grandparent] = { ...this.nodes[grandparent], color: 'red' }
-          snaps.push(this.snapshot('default', 'Recolor'))
+          snaps.push({ ...this.snapshot('default', 'Recolor'), currentLine: 4 })
           z = grandparent
         } else {
           if (z === this.nodes[parent].right) {
             const rotSnap = cloneNodes(this.nodes)
             rotSnap[z] = { ...rotSnap[z], highlight: 'rotating' }
             rotSnap[parent] = { ...rotSnap[parent], highlight: 'rotating' }
-            snaps.push({ nodes: rotSnap, rootId: this.rootId, rotationLabel: 'Left Rotation' })
+            snaps.push({ nodes: rotSnap, rootId: this.rootId, rotationLabel: 'Left Rotation', currentLine: 5 })
             z = parent
             this.rotateLeft(z)
-            snaps.push(this.snapshot('default', 'Left Rotation'))
+            snaps.push({ ...this.snapshot('default', 'Left Rotation'), currentLine: 5 })
           }
           const parent2 = this.nodes[z].parent!
           const grandparent2 = this.nodes[parent2].parent!
@@ -218,9 +219,9 @@ class RBTree {
           const rotSnap2 = cloneNodes(this.nodes)
           rotSnap2[parent2] = { ...rotSnap2[parent2], highlight: 'rotating' }
           rotSnap2[grandparent2] = { ...rotSnap2[grandparent2], highlight: 'rotating' }
-          snaps.push({ nodes: rotSnap2, rootId: this.rootId, rotationLabel: 'Right Rotation' })
+          snaps.push({ nodes: rotSnap2, rootId: this.rootId, rotationLabel: 'Right Rotation', currentLine: 6 })
           this.rotateRight(grandparent2)
-          snaps.push(this.snapshot('default', 'Right Rotation'))
+          snaps.push({ ...this.snapshot('default', 'Right Rotation'), currentLine: 6 })
         }
       } else {
         const uncle = this.nodes[grandparent].left!
@@ -229,22 +230,22 @@ class RBTree {
           recolorSnap[parent] = { ...recolorSnap[parent], highlight: 'recoloring' }
           recolorSnap[uncle] = { ...recolorSnap[uncle], highlight: 'recoloring' }
           recolorSnap[grandparent] = { ...recolorSnap[grandparent], highlight: 'recoloring' }
-          snaps.push({ nodes: recolorSnap, rootId: this.rootId, rotationLabel: 'Recolor' })
+          snaps.push({ nodes: recolorSnap, rootId: this.rootId, rotationLabel: 'Recolor', currentLine: 4 })
 
           this.nodes[parent] = { ...this.nodes[parent], color: 'black' }
           this.nodes[uncle] = { ...this.nodes[uncle], color: 'black' }
           this.nodes[grandparent] = { ...this.nodes[grandparent], color: 'red' }
-          snaps.push(this.snapshot('default', 'Recolor'))
+          snaps.push({ ...this.snapshot('default', 'Recolor'), currentLine: 4 })
           z = grandparent
         } else {
           if (z === this.nodes[parent].left) {
             const rotSnap = cloneNodes(this.nodes)
             rotSnap[z] = { ...rotSnap[z], highlight: 'rotating' }
             rotSnap[parent] = { ...rotSnap[parent], highlight: 'rotating' }
-            snaps.push({ nodes: rotSnap, rootId: this.rootId, rotationLabel: 'Right Rotation' })
+            snaps.push({ nodes: rotSnap, rootId: this.rootId, rotationLabel: 'Right Rotation', currentLine: 5 })
             z = parent
             this.rotateRight(z)
-            snaps.push(this.snapshot('default', 'Right Rotation'))
+            snaps.push({ ...this.snapshot('default', 'Right Rotation'), currentLine: 5 })
           }
           const parent2 = this.nodes[z].parent!
           const grandparent2 = this.nodes[parent2].parent!
@@ -253,9 +254,9 @@ class RBTree {
           const rotSnap2 = cloneNodes(this.nodes)
           rotSnap2[parent2] = { ...rotSnap2[parent2], highlight: 'rotating' }
           rotSnap2[grandparent2] = { ...rotSnap2[grandparent2], highlight: 'rotating' }
-          snaps.push({ nodes: rotSnap2, rootId: this.rootId, rotationLabel: 'Left Rotation' })
+          snaps.push({ nodes: rotSnap2, rootId: this.rootId, rotationLabel: 'Left Rotation', currentLine: 6 })
           this.rotateLeft(grandparent2)
-          snaps.push(this.snapshot('default', 'Left Rotation'))
+          snaps.push({ ...this.snapshot('default', 'Left Rotation'), currentLine: 6 })
         }
       }
       if (this.rootId === null) break
@@ -276,14 +277,14 @@ class RBTree {
       visited.push(cur)
       const snap = cloneNodes(this.nodes)
       for (const id of visited) snap[id] = { ...snap[id], highlight: 'traversing' }
-      snaps.push({ nodes: snap, rootId: this.rootId })
+      snaps.push({ nodes: snap, rootId: this.rootId, currentLine: 2 })
 
       const node = this.nodes[cur]
       if (value === node.value) {
         const fs = cloneNodes(this.nodes)
         for (const id of visited.slice(0, -1)) fs[id] = { ...fs[id], highlight: 'traversing' }
         fs[cur] = { ...fs[cur], highlight: 'found' }
-        snaps.push({ nodes: fs, rootId: this.rootId })
+        snaps.push({ nodes: fs, rootId: this.rootId, currentLine: 7 })
         break
       }
       cur = value < node.value ? node.left : node.right
@@ -295,11 +296,11 @@ class RBTree {
         const last = visited[visited.length - 1]
         for (const id of visited.slice(0, -1)) nfs[id] = { ...nfs[id], highlight: 'traversing' }
         nfs[last] = { ...nfs[last], highlight: 'notFound' }
-        snaps.push({ nodes: nfs, rootId: this.rootId })
+        snaps.push({ nodes: nfs, rootId: this.rootId, currentLine: 7 })
       }
     }
 
-    snaps.push(this.snapshot())
+    snaps.push({ ...this.snapshot(), currentLine: 7 })
     return snaps
   }
 }
@@ -325,6 +326,7 @@ function scheduleSnaps(snaps: Snap[], delay: number, finalStatus: string) {
         nodes: snap.nodes,
         rootId: snap.rootId,
         rotationLabel: snap.rotationLabel ?? '',
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })

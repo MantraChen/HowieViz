@@ -13,6 +13,7 @@ export interface LSStep {
   description: string
   comparisons: number
   foundAt: number
+  currentLine: number
 }
 
 const SPEED_MS: Record<AnimationSpeed, number> = { slow: 800, normal: 300, fast: 80 }
@@ -34,6 +35,7 @@ function generateSteps(arr: number[], target: number): LSStep[] {
     description: `Searching for ${target} in ${n} elements`,
     comparisons: 0,
     foundAt: -1,
+    currentLine: 2,
   })
 
   for (let i = 0; i < n; i++) {
@@ -45,6 +47,7 @@ function generateSteps(arr: number[], target: number): LSStep[] {
       description: `[${i}] = ${arr[i]} — is ${arr[i]} === ${target}?`,
       comparisons: i + 1,
       foundAt: -1,
+      currentLine: 3,
     })
 
     if (arr[i] === target) {
@@ -56,6 +59,7 @@ function generateSteps(arr: number[], target: number): LSStep[] {
         description: `Found ${target} at index ${i}! (${i + 1} comparison${i + 1 > 1 ? 's' : ''})`,
         comparisons: i + 1,
         foundAt: i,
+        currentLine: 4,
       })
       return steps
     }
@@ -66,6 +70,7 @@ function generateSteps(arr: number[], target: number): LSStep[] {
     description: `${target} not found after ${n} comparisons`,
     comparisons: n,
     foundAt: -1,
+    currentLine: 5,
   })
 
   return steps
@@ -160,6 +165,7 @@ export const useLinearSearchStore = create<LinearSearchState>((set, get) => ({
           description: step.description,
           comparisons: step.comparisons,
           foundAt: step.foundAt,
+          currentLine: step.currentLine,
           isAnimating: i < steps.length - 1,
           isDone: i === steps.length - 1,
         })

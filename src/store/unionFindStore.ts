@@ -14,6 +14,7 @@ export interface UFSnap {
   rank: number[]
   highlights: UFNodeHL[]
   message: string
+  currentLine?: number
 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -81,6 +82,7 @@ function scheduleSnaps(snaps: UFSnap[]) {
         rank: snap.rank,
         highlights: snap.highlights,
         message: snap.message,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: i < snaps.length - 1,
       })
     }, i * delay)
@@ -124,6 +126,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
       parent: [...p], rank: [...r],
       highlights: p.map((_, i) => pathX.includes(i) ? (i === pathX[pathX.length - 1] ? 'root' : 'path') : 'default'),
       message: `Finding root of ${x}: path ${pathX.join(' → ')}`,
+      currentLine: 1,
     })
 
     // Path compress x
@@ -133,6 +136,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
       parent: [...p], rank: [...r],
       highlights: p.map((_, i) => pathX.includes(i) ? (i === rootX ? 'root' : 'path') : 'default'),
       message: `Root of ${x} = ${rootX} (path compressed)`,
+      currentLine: 3,
     })
 
     // Find root of y
@@ -141,6 +145,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
       parent: [...p], rank: [...r],
       highlights: p.map((_, i) => pathY.includes(i) ? (i === pathY[pathY.length - 1] ? 'root' : 'path') : (pathX.includes(i) ? 'merged' : 'default')),
       message: `Finding root of ${y}: path ${pathY.join(' → ')}`,
+      currentLine: 6,
     })
 
     const rootY = pathY[pathY.length - 1]
@@ -151,6 +156,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
         parent: [...p], rank: [...r],
         highlights: new Array(p.length).fill('default') as UFNodeHL[],
         message: `${x} and ${y} are already in the same set`,
+        currentLine: 8,
       })
       scheduleSnaps(snaps)
       return
@@ -171,12 +177,14 @@ export const useUFStore = create<UFStore>((set, get) => ({
       parent: [...p], rank: [...r],
       highlights: p.map((_, i) => (pathX.includes(i) || pathY.includes(i)) ? 'merged' : 'default'),
       message: `Union complete: merged under root ${newRoot}`,
+      currentLine: 10,
     })
 
     snaps.push({
       parent: [...p], rank: [...r],
       highlights: new Array(p.length).fill('default') as UFNodeHL[],
       message: `Done. Sets merged.`,
+      currentLine: 10,
     })
 
     scheduleSnaps(snaps)
@@ -204,6 +212,7 @@ export const useUFStore = create<UFStore>((set, get) => ({
           return 'default'
         }),
         message: `find(${x}): at node ${path[i]}${path[i] === root ? ' (root!)' : ''}`,
+        currentLine: 1,
       })
     }
 
@@ -215,12 +224,14 @@ export const useUFStore = create<UFStore>((set, get) => ({
       parent: [...compressed], rank: [...r],
       highlights: p.map((_, i) => path.includes(i) ? (i === root ? 'root' : 'merged') : 'default'),
       message: `Path compression: all nodes on path now point to root ${root}`,
+      currentLine: 3,
     })
 
     snaps.push({
       parent: [...compressed], rank: [...r],
       highlights: new Array(compressed.length).fill('default') as UFNodeHL[],
       message: `find(${x}) = ${root}`,
+      currentLine: 4,
     })
 
     scheduleSnaps(snaps)

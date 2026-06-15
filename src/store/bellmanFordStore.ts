@@ -29,6 +29,7 @@ interface BFSnap {
   totalIterations: number
   negativeCycle: boolean
   done: boolean
+  currentLine?: number
 }
 
 type Step = { time: string; text: string }
@@ -107,6 +108,7 @@ function computeBellmanFord(
     updatedNodeId: string | null,
     negativeCycle = false,
     done = false,
+    currentLine = 0,
   ): BFSnap {
     const nc: Record<string, BFNode> = {}
     for (const id of nodeIds) {
@@ -120,21 +122,21 @@ function computeBellmanFord(
     }
     const dists: Record<string, number> = {}
     for (const id of nodeIds) dists[nodes[id].label] = dist[id]
-    return { nodes: nc, edges: ec, distances: dists, iteration, totalIterations, negativeCycle, done }
+    return { nodes: nc, edges: ec, distances: dists, iteration, totalIterations, negativeCycle, done, currentLine }
   }
 
   // Initial snap
-  snaps.push(makeSnap(0, null, 'default', null))
+  snaps.push(makeSnap(0, null, 'default', null, false, false, 2))
 
   for (let iter = 1; iter <= totalIterations; iter++) {
     for (const edge of edgeList) {
       // Snap: checking this edge
-      snaps.push(makeSnap(iter, edge.id, 'checking', null))
+      snaps.push(makeSnap(iter, edge.id, 'checking', null, false, false, 4))
 
       if (dist[edge.from] !== Infinity && dist[edge.from] + edge.weight < dist[edge.to]) {
         dist[edge.to] = dist[edge.from] + edge.weight
         // Snap: relaxed
-        snaps.push(makeSnap(iter, edge.id, 'relaxed', edge.to))
+        snaps.push(makeSnap(iter, edge.id, 'relaxed', edge.to, false, false, 6))
       }
     }
   }
@@ -144,7 +146,7 @@ function computeBellmanFord(
   for (const edge of edgeList) {
     if (dist[edge.from] !== Infinity && dist[edge.from] + edge.weight < dist[edge.to]) {
       negativeCycle = true
-      snaps.push(makeSnap(totalIterations + 1, edge.id, 'negative', null, true))
+      snaps.push(makeSnap(totalIterations + 1, edge.id, 'negative', null, true, false, 9))
       break
     }
   }
@@ -156,7 +158,7 @@ function computeBellmanFord(
   for (const e of edgeList) ec[e.id] = { ...e, highlight: 'default' }
   const dists: Record<string, number> = {}
   for (const id of nodeIds) dists[nodes[id].label] = dist[id]
-  snaps.push({ nodes: nc, edges: ec, distances: dists, iteration: totalIterations, totalIterations, negativeCycle, done: true })
+  snaps.push({ nodes: nc, edges: ec, distances: dists, iteration: totalIterations, totalIterations, negativeCycle, done: true, currentLine: 11 })
 
   return snaps
 }
@@ -212,6 +214,7 @@ function scheduleSnaps(snaps: BFSnap[], delay: number) {
         totalIterations: snap.totalIterations,
         negativeCycle: snap.negativeCycle,
         done: snap.done,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         statusText: isLast
           ? snap.negativeCycle ? 'Done — negative cycle detected!' : `Done — ${snap.totalIterations} passes completed`
@@ -314,6 +317,7 @@ export const useBellmanFordStore = create<BellmanFordStore>((set, get) => ({
       totalIterations: snap.totalIterations,
       negativeCycle: snap.negativeCycle,
       done: snap.done,
+      currentLine: snap.currentLine ?? 0,
       statusText: text,
       steps: [...prev.steps, { time: nowTime(), text }],
     }))

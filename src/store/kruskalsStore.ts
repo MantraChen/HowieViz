@@ -38,6 +38,7 @@ interface KruskalSnap {
   mstWeight: number
   mstEdgeCount: number
   done: boolean
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 900, normal: 450, fast: 180 }
@@ -166,16 +167,16 @@ function computeKruskals(
   }
 
   // Initial snap
-  snaps.push(snap(null, {}))
+  snaps.push({ ...snap(null, {}), currentLine: 2 })
 
   for (const edge of sorted) {
     const fromNodeHL: Record<string, KruskalNodeHL> = { [edge.from]: 'active', [edge.to]: 'active' }
 
     // Snap: considering this edge
-    snaps.push(snap(edge.id, fromNodeHL))
+    snaps.push({ ...snap(edge.id, fromNodeHL), currentLine: 6 })
 
-    const merged = union(parent, rank, edge.from, edge.to)
-    if (merged) {
+    const wasAccepted = union(parent, rank, edge.from, edge.to)
+    if (wasAccepted) {
       accepted.add(edge.id)
       mstWeight += edge.weight
     } else {
@@ -183,8 +184,8 @@ function computeKruskals(
     }
     processedCount++
 
-    // Snap: after decision
-    snaps.push(snap(null, {}))
+    // Snap: after decision (accepted → line 7, rejected → line 5)
+    snaps.push({ ...snap(null, {}), currentLine: wasAccepted ? 7 : 5 })
   }
 
   // Final snap
@@ -203,6 +204,7 @@ function computeKruskals(
     mstWeight,
     mstEdgeCount: accepted.size,
     done: true,
+    currentLine: 10,
   })
 
   return snaps
@@ -244,6 +246,7 @@ function scheduleSnaps(snaps: KruskalSnap[], delay: number) {
         mstWeight: snap.mstWeight,
         mstEdgeCount: snap.mstEdgeCount,
         done: snap.done,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: i < snaps.length - 1,
       })
     }, i * delay)

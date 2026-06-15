@@ -10,7 +10,8 @@ export interface HeapNode {
   highlight: HeapHighlight
 }
 
-type Snap = { id: string; value: number; highlight: HeapHighlight }[]
+type HeapFrame = { id: string; value: number; highlight: HeapHighlight }
+type Snap = { heap: HeapFrame[]; currentLine: number }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = {
   slow: 700,
@@ -91,7 +92,8 @@ function scheduleSnapshots(snapshots: Snap[], delay: number, finalStatus: string
       if (animGen !== gen) return
       const isLast = i === snapshots.length - 1
       useHeapStore.setState({
-        heap: snap,
+        heap: snap.heap,
+        currentLine: snap.currentLine,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })
@@ -180,35 +182,35 @@ export const useHeapStore = create<HeapStore>((set, get) => ({
 
     const snapshots: Snap[] = []
 
-    snapshots.push(work.map((n, i) => ({
+    snapshots.push({ heap: work.map((n, i) => ({
       ...n,
       highlight: i === work.length - 1 ? 'inserted' : 'default',
-    })))
+    } as HeapFrame)), currentLine: 2 })
 
     let idx = work.length - 1
     while (idx > 0) {
       const parent = Math.floor((idx - 1) / 2)
       if (work[idx].value < work[parent].value) {
-        snapshots.push(work.map((n, i) => ({
+        snapshots.push({ heap: work.map((n, i) => ({
           ...n,
           highlight: i === idx || i === parent ? 'swapping' : 'default',
-        })))
+        } as HeapFrame)), currentLine: 3 })
         ;[work[idx], work[parent]] = [work[parent], work[idx]]
-        snapshots.push(work.map((n, i) => ({
+        snapshots.push({ heap: work.map((n, i) => ({
           ...n,
           highlight: i === idx || i === parent ? 'swapping' : 'default',
-        })))
+        } as HeapFrame)), currentLine: 4 })
         idx = parent
       } else {
         break
       }
     }
 
-    snapshots.push(work.map((n, i) => ({
+    snapshots.push({ heap: work.map((n, i) => ({
       ...n,
       highlight: i === idx ? 'active' : 'default',
-    })))
-    snapshots.push(work.map(n => ({ ...n, highlight: 'default' })))
+    } as HeapFrame)), currentLine: 4 })
+    snapshots.push({ heap: work.map(n => ({ ...n, highlight: 'default' } as HeapFrame)), currentLine: 4 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Insert: ${value} added to heap` }] })
     scheduleSnapshots(snapshots, delay, `Inserted ${value}`)
@@ -224,23 +226,23 @@ export const useHeapStore = create<HeapStore>((set, get) => ({
     const snapshots: Snap[] = []
 
     if (heap.length === 1) {
-      snapshots.push([{ ...heap[0], highlight: 'deleted' }])
-      snapshots.push([])
+      snapshots.push({ heap: [{ ...heap[0], highlight: 'deleted' }], currentLine: 6 })
+      snapshots.push({ heap: [], currentLine: 6 })
     } else {
       const work = heap.map(n => ({ id: n.id, value: n.value }))
 
-      snapshots.push(work.map((n, i) => ({
+      snapshots.push({ heap: work.map((n, i) => ({
         ...n,
         highlight: i === 0 ? 'deleted' : 'default',
-      })))
+      } as HeapFrame)), currentLine: 6 })
 
       work[0] = { ...work[work.length - 1] }
       work.splice(work.length - 1, 1)
 
-      snapshots.push(work.map((n, i) => ({
+      snapshots.push({ heap: work.map((n, i) => ({
         ...n,
         highlight: i === 0 ? 'active' : 'default',
-      })))
+      } as HeapFrame)), currentLine: 6 })
 
       let idx = 0
       while (true) {
@@ -251,19 +253,19 @@ export const useHeapStore = create<HeapStore>((set, get) => ({
         if (r < work.length && work[r].value < work[smallest].value) smallest = r
         if (smallest === idx) break
 
-        snapshots.push(work.map((n, i) => ({
+        snapshots.push({ heap: work.map((n, i) => ({
           ...n,
           highlight: i === idx || i === smallest ? 'swapping' : 'default',
-        })))
+        } as HeapFrame)), currentLine: 7 })
         ;[work[idx], work[smallest]] = [work[smallest], work[idx]]
-        snapshots.push(work.map((n, i) => ({
+        snapshots.push({ heap: work.map((n, i) => ({
           ...n,
           highlight: i === idx || i === smallest ? 'swapping' : 'default',
-        })))
+        } as HeapFrame)), currentLine: 8 })
         idx = smallest
       }
 
-      snapshots.push(work.map(n => ({ ...n, highlight: 'default' })))
+      snapshots.push({ heap: work.map(n => ({ ...n, highlight: 'default' } as HeapFrame)), currentLine: 8 })
     }
 
     set({ steps: [...steps, { time: nowTime(), text: `Extract min: ${minVal} removed` }] })

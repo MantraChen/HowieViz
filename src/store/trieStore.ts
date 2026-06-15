@@ -15,6 +15,7 @@ interface TrieSnap {
   nodes: Record<string, TrieNode>
   rootId: string
   message: string
+  currentLine?: number
 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -76,6 +77,7 @@ function scheduleSnaps(snaps: TrieSnap[], delay: number, finalStatus: string) {
       useTrieStore.setState({
         nodes: snap.nodes,
         message: snap.message,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })
@@ -143,22 +145,22 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
         nodes[newNode.id] = { ...newNode, highlight: 'default' }
         nodes[cur] = { ...nodes[cur], children: { ...nodes[cur].children, [ch]: newNode.id } }
         cur = newNode.id
-        snaps.push({ nodes: deepCopyNodes(n), rootId, message: `Inserting '${word}': created node '${ch}'` })
+        snaps.push({ nodes: deepCopyNodes(n), rootId, message: `Inserting '${word}': created node '${ch}'`, currentLine: 4 })
       } else {
         n[cur] = { ...n[cur], highlight: 'traversing' }
         cur = n[cur].children[ch]
         n[cur] = { ...n[cur], highlight: 'traversing' }
-        snaps.push({ nodes: deepCopyNodes(n), rootId, message: `Inserting '${word}': following '${ch}'` })
+        snaps.push({ nodes: deepCopyNodes(n), rootId, message: `Inserting '${word}': following '${ch}'`, currentLine: 6 })
       }
     }
 
     nodes[cur] = { ...nodes[cur], isEnd: true }
     const final = deepCopyNodes(nodes)
     final[cur] = { ...final[cur], highlight: 'inserted', isEnd: true }
-    snaps.push({ nodes: final, rootId, message: `Inserted '${word}' ✓` })
+    snaps.push({ nodes: final, rootId, message: `Inserted '${word}' ✓`, currentLine: 7 })
 
     const done = deepCopyNodes(nodes)
-    snaps.push({ nodes: done, rootId, message: `'${word}' is now in the trie` })
+    snaps.push({ nodes: done, rootId, message: `'${word}' is now in the trie`, currentLine: 7 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Insert: "${word}" added to trie` }] })
     scheduleSnaps(snaps, SPEED_DELAY[speed], `Inserted "${word}"`)
@@ -181,14 +183,14 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
 
       if (!n[cur].children[ch]) {
         n[cur] = { ...n[cur], highlight: 'notFound' }
-        snaps.push({ nodes: n, rootId, message: `Search '${word}': '${ch}' not found` })
+        snaps.push({ nodes: n, rootId, message: `Search '${word}': '${ch}' not found`, currentLine: 11 })
         found = false
         break
       }
 
       const nextId = n[cur].children[ch]
       n[nextId] = { ...n[nextId], highlight: 'traversing' }
-      snaps.push({ nodes: n, rootId, message: `Search '${word}': found '${ch}'` })
+      snaps.push({ nodes: n, rootId, message: `Search '${word}': found '${ch}'`, currentLine: 12 })
       cur = nextId
     }
 
@@ -200,11 +202,12 @@ export const useTrieStore = create<TrieStore>((set, get) => ({
       snaps.push({
         nodes: n, rootId,
         message: isWord ? `'${word}' found in trie ✓` : `'${word}' is a prefix but not a complete word`,
+        currentLine: 13,
       })
     }
 
     const done = deepCopyNodes(nodes)
-    snaps.push({ nodes: done, rootId, message: snaps[snaps.length - 1]?.message ?? '' })
+    snaps.push({ nodes: done, rootId, message: snaps[snaps.length - 1]?.message ?? '', currentLine: 13 })
 
     const finalStatus = found && isWord ? `Found "${word}"` : `"${word}" not found`
     const stepText = found && isWord ? `Search: "${word}" found` : `Search: "${word}" not found`

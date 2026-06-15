@@ -8,6 +8,7 @@ export interface LCSSnap {
   phase: 'fill' | 'backtrack' | 'done'
   lcsIndices1: number[]
   lcsIndices2: number[]
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 120, normal: 60, fast: 15 }
@@ -70,7 +71,8 @@ export const useLCSStore = create<LCSStore>((set, get) => ({
 
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
-        if (s1[i - 1] === s2[j - 1]) {
+        const isMatch = s1[i - 1] === s2[j - 1]
+        if (isMatch) {
           dp[i][j] = dp[i - 1][j - 1] + 1
         } else {
           dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
@@ -82,6 +84,7 @@ export const useLCSStore = create<LCSStore>((set, get) => ({
           phase: 'fill',
           lcsIndices1: [],
           lcsIndices2: [],
+          currentLine: isMatch ? 6 : 8,
         })
       }
     }
@@ -101,6 +104,7 @@ export const useLCSStore = create<LCSStore>((set, get) => ({
           phase: 'backtrack',
           lcsIndices1: [...idx1],
           lcsIndices2: [...idx2],
+          currentLine: 10,
         })
         i--; j--
       } else if (dp[i - 1][j] > dp[i][j - 1]) {
@@ -117,6 +121,7 @@ export const useLCSStore = create<LCSStore>((set, get) => ({
       phase: 'done',
       lcsIndices1: [...idx1],
       lcsIndices2: [...idx2],
+      currentLine: 11,
     })
 
     const lcsString = idx1.map(k => s1[k]).join('')
@@ -130,6 +135,7 @@ export const useLCSStore = create<LCSStore>((set, get) => ({
         if (animGen !== gen) return
         useLCSStore.setState({
           currentSnap: snap,
+          currentLine: snap.currentLine ?? 0,
           isAnimating: k < snaps.length - 1,
           isDone: snap.phase === 'done',
         })

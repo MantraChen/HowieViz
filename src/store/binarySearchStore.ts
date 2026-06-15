@@ -11,6 +11,7 @@ export interface BSElement {
 export interface BSStep {
   elements: BSElement[]
   description: string
+  currentLine: number
 }
 
 const SPEED_MS: Record<AnimationSpeed, number> = { slow: 900, normal: 450, fast: 120 }
@@ -41,6 +42,7 @@ function generateSteps(array: number[], target: number): BSStep[] {
   steps.push({
     elements: makeDefault(array),
     description: `Searching for ${target} in sorted array of ${n} elements`,
+    currentLine: 3,
   })
 
   while (lo <= hi) {
@@ -49,6 +51,7 @@ function generateSteps(array: number[], target: number): BSStep[] {
     steps.push({
       elements: array.map((v, i) => ({ value: v, highlight: hlFor(i, lo, mid, hi) })),
       description: `lo=${lo}  mid=${mid}  hi=${hi}  →  a[mid]=${array[mid]}`,
+      currentLine: 4,
     })
 
     if (array[mid] === target) {
@@ -58,6 +61,7 @@ function generateSteps(array: number[], target: number): BSStep[] {
           highlight: i < lo || i > hi ? 'eliminated' : i === mid ? 'found' : hlFor(i, lo, mid, hi),
         })),
         description: `Found ${target} at index ${mid}!`,
+        currentLine: 5,
       })
       return steps
     } else if (target < array[mid]) {
@@ -67,6 +71,7 @@ function generateSteps(array: number[], target: number): BSStep[] {
           highlight: i < lo || i > hi || i >= mid ? 'eliminated' : hlFor(i, lo, mid, hi),
         })),
         description: `${target} < a[mid]=${array[mid]}  →  search left half`,
+        currentLine: 6,
       })
       hi = mid - 1
     } else {
@@ -76,6 +81,7 @@ function generateSteps(array: number[], target: number): BSStep[] {
           highlight: i < lo || i > hi || i <= mid ? 'eliminated' : hlFor(i, lo, mid, hi),
         })),
         description: `${target} > a[mid]=${array[mid]}  →  search right half`,
+        currentLine: 7,
       })
       lo = mid + 1
     }
@@ -84,6 +90,7 @@ function generateSteps(array: number[], target: number): BSStep[] {
   steps.push({
     elements: array.map(v => ({ value: v, highlight: 'eliminated' as BSHighlight })),
     description: `${target} not found in array`,
+    currentLine: 8,
   })
 
   return steps
@@ -156,6 +163,7 @@ export const useBinarySearchStore = create<BinarySearchState>((set, get) => ({
         set({
           elements: step.elements,
           description: step.description,
+          currentLine: step.currentLine,
           isAnimating: i < steps.length - 1,
           isDone: i === steps.length - 1,
         })

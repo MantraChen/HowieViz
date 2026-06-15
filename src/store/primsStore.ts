@@ -27,6 +27,7 @@ interface PrimSnap {
   mstWeight: number
   mstEdgeCount: number
   done: boolean
+  currentLine?: number
 }
 
 type Step = { time: string; text: string }
@@ -130,7 +131,7 @@ function computePrims(
     if (!inMST.has(other)) candidates.add(eid)
   }
 
-  snaps.push(snap(candidates))
+  snaps.push({ ...snap(candidates), currentLine: 2 })
 
   while (inMST.size < nodeIds.length && candidates.size > 0) {
     // Find minimum frontier edge
@@ -167,7 +168,7 @@ function computePrims(
       if (!inMST.has(other) && !mstEdges.has(eid)) candidates.add(eid)
     }
 
-    snaps.push(snap(candidates))
+    snaps.push({ ...snap(candidates), currentLine: 7 })
   }
 
   // Final snap
@@ -179,7 +180,7 @@ function computePrims(
   for (const eid in edges) {
     ec[eid] = { ...edges[eid], highlight: mstEdges.has(eid) ? 'mst' : 'default' }
   }
-  snaps.push({ nodes: nc, edges: ec, mstWeight, mstEdgeCount: mstEdges.size, done: true })
+  snaps.push({ nodes: nc, edges: ec, mstWeight, mstEdgeCount: mstEdges.size, done: true, currentLine: 12 })
 
   return snaps
 }
@@ -229,6 +230,7 @@ function scheduleSnaps(snaps: PrimSnap[], delay: number) {
         mstWeight: snap.mstWeight,
         mstEdgeCount: snap.mstEdgeCount,
         done: snap.done,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         statusText: isLast ? `MST complete — total weight ${snap.mstWeight}` : text,
         steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
@@ -321,6 +323,7 @@ export const usePrimsStore = create<PrimsStore>((set, get) => ({
       mstWeight: snap.mstWeight,
       mstEdgeCount: snap.mstEdgeCount,
       done: snap.done,
+      currentLine: snap.currentLine ?? 0,
       statusText: text,
       steps: [...prev.steps, { time: nowTime(), text }],
     }))

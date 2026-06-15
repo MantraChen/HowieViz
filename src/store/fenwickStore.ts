@@ -8,6 +8,7 @@ interface FWSnap {
   bitHL: FWNodeHL[]
   message: string
   resultSum: number | null
+  currentLine?: number
 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -54,6 +55,7 @@ function scheduleSnaps(snaps: FWSnap[], delay: number, finalStatus: string) {
         bitHL: snap.bitHL,
         message: snap.message,
         resultSum: snap.resultSum,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })
@@ -124,7 +126,7 @@ export const useFWStore = create<FWStore>((set, get) => ({
 
     const initBitHL = new Array(n + 1).fill('default') as FWNodeHL[]
     const initArrHL = new Array(n).fill('default') as FWNodeHL[]
-    snaps.push({ bit: b, arrHL: initArrHL, bitHL: initBitHL, message: `Prefix sum query(${qi})`, resultSum: null })
+    snaps.push({ bit: b, arrHL: initArrHL, bitHL: initBitHL, message: `Prefix sum query(${qi})`, resultSum: null, currentLine: 5 })
 
     while (i > 0) {
       total += b[i]
@@ -137,13 +139,14 @@ export const useFWStore = create<FWStore>((set, get) => ({
         bit: b, arrHL: ahl, bitHL: bhl,
         message: `i=${i}: bit[${i}]=${b[i]}, covers arr[${lo}..${i}], sum+=${b[i]} → ${total}`,
         resultSum: total,
+        currentLine: 8,
       })
       i -= lowbit(i)
     }
 
     const doneAHL = new Array(n).fill('default') as FWNodeHL[]
     const doneBHL = new Array(n + 1).fill('default') as FWNodeHL[]
-    snaps.push({ bit: b, arrHL: doneAHL, bitHL: doneBHL, message: `query(${qi}) = ${total}`, resultSum: total })
+    snaps.push({ bit: b, arrHL: doneAHL, bitHL: doneBHL, message: `query(${qi}) = ${total}`, resultSum: total, currentLine: 10 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Query(${qi}) = ${total}` }] })
     scheduleSnaps(snaps, SPEED_DELAY[speed], `Prefix sum(${qi}) = ${total}`)
@@ -168,6 +171,7 @@ export const useFWStore = create<FWStore>((set, get) => ({
       bitHL: new Array(n + 1).fill('default') as FWNodeHL[],
       message: `Update index ${ui} by delta ${delta > 0 ? '+' : ''}${delta}`,
       resultSum: null,
+      currentLine: 1,
     })
 
     while (i <= n) {
@@ -180,13 +184,14 @@ export const useFWStore = create<FWStore>((set, get) => ({
         bit: [...b], arrHL: ahl, bitHL: bhl,
         message: `i=${i}: bit[${i}] += ${delta} → ${b[i]}`,
         resultSum: null,
+        currentLine: 3,
       })
       i += lowbit(i)
     }
 
     const done = new Array(n).fill('default') as FWNodeHL[]
     const doneBHL = new Array(n + 1).fill('default') as FWNodeHL[]
-    snaps.push({ bit: [...b], arrHL: done, bitHL: doneBHL, message: `Update complete`, resultSum: null })
+    snaps.push({ bit: [...b], arrHL: done, bitHL: doneBHL, message: `Update complete`, resultSum: null, currentLine: 4 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Update(${ui}, ${delta > 0 ? '+' : ''}${delta})` }] })
     scheduleSnaps(snaps, SPEED_DELAY[speed], `Updated index ${ui} by ${delta > 0 ? '+' : ''}${delta}`)

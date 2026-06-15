@@ -28,6 +28,7 @@ interface TopoSnap {
   result: string[]
   cycleDetected: boolean
   done: boolean
+  currentLine?: number
 }
 
 type Step = { time: string; text: string }
@@ -128,12 +129,12 @@ function computeTopoSort(
   }
 
   // Initial snap
-  snaps.push(snap(null, new Set()))
+  snaps.push({ ...snap(null, new Set()), currentLine: 4 })
 
   while (queue.length > 0) {
     const cur = queue.shift()!
     // Snap: processing current node
-    snaps.push(snap(cur, new Set()))
+    snaps.push({ ...snap(cur, new Set()), currentLine: 7 })
 
     doneNodes.add(cur)
     result.push(cur)
@@ -150,12 +151,12 @@ function computeTopoSort(
 
     // Snap: removing edges from current node
     if (activeEdges.size > 0) {
-      snaps.push(snap(cur, activeEdges))
+      snaps.push({ ...snap(cur, activeEdges), currentLine: 10 })
       for (const eid of activeEdges) removedEdges.add(eid)
     }
 
     // Snap: after processing
-    snaps.push(snap(null, new Set()))
+    snaps.push({ ...snap(null, new Set()), currentLine: 8 })
   }
 
   const cycleDetected = result.length < Object.keys(nodes).length
@@ -176,6 +177,7 @@ function computeTopoSort(
     result: resultLabels,
     cycleDetected,
     done: true,
+    currentLine: 13,
   })
 
   return snaps
@@ -230,6 +232,7 @@ function scheduleSnaps(snaps: TopoSnap[], delay: number) {
         result: snap.result,
         cycleDetected: snap.cycleDetected,
         done: snap.done,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         statusText: isLast
           ? snap.cycleDetected ? 'Done — cycle detected!' : `Done — order: ${snap.result.join('→')}`
@@ -325,6 +328,7 @@ export const useTopoSortStore = create<TopoSortStore>((set, get) => ({
       result: snap.result,
       cycleDetected: snap.cycleDetected,
       done: snap.done,
+      currentLine: snap.currentLine ?? 0,
       statusText: text,
       steps: [...prev.steps, { time: nowTime(), text }],
     }))

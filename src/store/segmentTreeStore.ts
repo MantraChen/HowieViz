@@ -14,6 +14,7 @@ interface STSnap {
   nodes: Record<number, STNode>
   message: string
   resultSum: number | null
+  currentLine?: number
 }
 
 let animTimers: ReturnType<typeof setTimeout>[] = []
@@ -68,6 +69,7 @@ function scheduleSnaps(snaps: STSnap[], delay: number, finalStatus: string) {
         nodes: snap.nodes,
         message: snap.message,
         resultSum: snap.resultSum,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         ...(isLast ? { statusText: finalStatus } : {}),
       })
@@ -151,12 +153,13 @@ export const useSTStore = create<STStore>((set, get) => ({
           nodes: { ...n2 },
           message: `Node [${l},${r}] fully covered, sum += ${nodes[idx].sum} → total=${total}`,
           resultSum: total,
+          currentLine: 8,
         })
         return
       }
 
       n2[idx] = { ...n2[idx], highlight: 'querying' }
-      snaps.push({ nodes: { ...n2 }, message: `Visiting node [${l},${r}], splitting...`, resultSum: total })
+      snaps.push({ nodes: { ...n2 }, message: `Visiting node [${l},${r}], splitting...`, resultSum: total, currentLine: 7 })
 
       const mid = (l + r) >> 1
       doQuery(2 * idx, l, mid)
@@ -166,7 +169,7 @@ export const useSTStore = create<STStore>((set, get) => ({
     doQuery(1, 0, n - 1)
 
     const done = resetHL(nodes)
-    snaps.push({ nodes: done, message: `Query [${ql},${qr}] = ${total}`, resultSum: total })
+    snaps.push({ nodes: done, message: `Query [${ql},${qr}] = ${total}`, resultSum: total, currentLine: 10 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Query [${ql},${qr}] = ${total}` }] })
     scheduleSnaps(snaps, SPEED_DELAY[speed], `Query [${ql},${qr}] = ${total}`)
@@ -192,11 +195,11 @@ export const useSTStore = create<STStore>((set, get) => ({
       if (l === r) {
         nodes[idx] = { ...nodes[idx], sum: val }
         n2[idx] = { ...n2[idx], sum: val, highlight: 'updating' }
-        snaps.push({ nodes: { ...n2 }, message: `Updated leaf [${l}] = ${val}`, resultSum: null })
+        snaps.push({ nodes: { ...n2 }, message: `Updated leaf [${l}] = ${val}`, resultSum: null, currentLine: 11 })
         return
       }
 
-      snaps.push({ nodes: { ...n2 }, message: `Visiting [${l},${r}], going deeper...`, resultSum: null })
+      snaps.push({ nodes: { ...n2 }, message: `Visiting [${l},${r}], going deeper...`, resultSum: null, currentLine: 11 })
 
       const mid = (l + r) >> 1
       if (qi <= mid) doUpdate(2 * idx, l, mid)
@@ -204,13 +207,13 @@ export const useSTStore = create<STStore>((set, get) => ({
 
       nodes[idx] = { ...nodes[idx], sum: nodes[2 * idx].sum + nodes[2 * idx + 1].sum }
       n2[idx] = { ...n2[idx], sum: nodes[idx].sum, highlight: 'updating' }
-      snaps.push({ nodes: { ...n2 }, message: `Updating [${l},${r}] sum = ${nodes[idx].sum}`, resultSum: null })
+      snaps.push({ nodes: { ...n2 }, message: `Updating [${l},${r}] sum = ${nodes[idx].sum}`, resultSum: null, currentLine: 11 })
     }
 
     doUpdate(1, 0, n - 1)
 
     const done = resetHL(nodes)
-    snaps.push({ nodes: done, message: `arr[${qi}] updated to ${val}`, resultSum: null })
+    snaps.push({ nodes: done, message: `arr[${qi}] updated to ${val}`, resultSum: null, currentLine: 11 })
 
     set({ steps: [...steps, { time: nowTime(), text: `Update: arr[${qi}] = ${val}` }] })
     scheduleSnaps(snaps, SPEED_DELAY[speed], `Updated arr[${qi}] = ${val}`)

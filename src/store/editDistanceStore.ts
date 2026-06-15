@@ -17,6 +17,7 @@ export interface EditSnap {
   phase: 'fill' | 'backtrack' | 'done'
   ops: EditStep[]
   cellOp: EditOp[][]
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 120, normal: 60, fast: 15 }
@@ -81,7 +82,8 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
 
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
-        if (s1[i - 1] === s2[j - 1]) {
+        const isMatch = s1[i - 1] === s2[j - 1]
+        if (isMatch) {
           dp[i][j] = dp[i - 1][j - 1]
           cellOp[i][j] = 'match'
         } else {
@@ -99,6 +101,7 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
           phase: 'fill',
           ops: [],
           cellOp: cellOp.map(r => [...r]),
+          currentLine: isMatch ? 7 : 9,
         })
       }
     }
@@ -118,6 +121,7 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
           phase: 'backtrack',
           ops: [...ops],
           cellOp: cellOp.map(r => [...r]),
+          currentLine: 12,
         })
         i--; j--
       } else if (j > 0 && (i === 0 || cellOp[i][j] === 'insert')) {
@@ -129,6 +133,7 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
           phase: 'backtrack',
           ops: [...ops],
           cellOp: cellOp.map(r => [...r]),
+          currentLine: 12,
         })
         j--
       } else {
@@ -140,6 +145,7 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
           phase: 'backtrack',
           ops: [...ops],
           cellOp: cellOp.map(r => [...r]),
+          currentLine: 12,
         })
         i--
       }
@@ -152,6 +158,7 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
       phase: 'done',
       ops: [...ops],
       cellOp: cellOp.map(r => [...r]),
+      currentLine: 13,
     })
 
     set({ str1: s1, str2: s2, table: dp, isAnimating: true, isDone: false })
@@ -164,6 +171,7 @@ export const useEditDistanceStore = create<EditDistanceStore>((set, get) => ({
         if (animGen !== gen) return
         useEditDistanceStore.setState({
           currentSnap: snap,
+          currentLine: snap.currentLine ?? 0,
           isAnimating: k < snaps.length - 1,
           isDone: snap.phase === 'done',
         })

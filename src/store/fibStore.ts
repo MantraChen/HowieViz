@@ -16,6 +16,7 @@ export interface FibSnap {
   nodes: Record<string, FibNode>
   memo: Record<number, number>
   currentId: string | null
+  currentLine?: number
 }
 
 const SPEED_DELAY: Record<AnimationSpeed, number> = { slow: 800, normal: 400, fast: 150 }
@@ -60,6 +61,7 @@ function buildFibTree(
       nodes: JSON.parse(JSON.stringify(nodes)),
       memo: { ...memo },
       currentId: id,
+      currentLine: 7,
     }
     snaps.push(snap)
     return { id, result: memo[n] }
@@ -74,6 +76,7 @@ function buildFibTree(
       nodes: JSON.parse(JSON.stringify(nodes)),
       memo: { ...memo },
       currentId: id,
+      currentLine: 6,
     }
     snaps.push(snap)
     return { id, result: n }
@@ -84,6 +87,7 @@ function buildFibTree(
     nodes: JSON.parse(JSON.stringify(nodes)),
     memo: { ...memo },
     currentId: id,
+    currentLine: 8,
   }
   snaps.push(snap0)
 
@@ -100,6 +104,7 @@ function buildFibTree(
     nodes: JSON.parse(JSON.stringify(nodes)),
     memo: { ...memo },
     currentId: id,
+    currentLine: 9,
   }
   snaps.push(snapFinal)
 
@@ -164,6 +169,7 @@ export const useFibStore = create<FibStore>((set, get) => ({
           nodes: snap.nodes,
           memo: snap.memo,
           currentSnapIdx: i,
+          currentLine: snap.currentLine ?? 0,
           isAnimating: i < snaps.length - 1,
         })
       }, i * delay)

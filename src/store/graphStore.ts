@@ -25,6 +25,7 @@ interface Snap {
   nodes: Record<string, GraphNode>
   edges: Record<string, GraphEdge>
   traversalOrder: string[]
+  currentLine?: number
 }
 
 type Step = { time: string; text: string }
@@ -120,6 +121,7 @@ function buildTraversalSnapshots(
   edges: Record<string, GraphEdge>,
   order: { nodeId: string; order: number }[],
   treeEdgeIds: Set<string>,
+  traversalType: 'BFS' | 'DFS' = 'BFS',
 ): Snap[] {
   const snapshots: Snap[] = []
   const processedIds = new Set<string>()
@@ -140,10 +142,12 @@ function buildTraversalSnapshots(
     const edgesCopy: Record<string, GraphEdge> = {}
     for (const id in edges) edgesCopy[id] = { ...edges[id], highlight: treeEdgeIds.has(id) ? 'active' : 'default' }
 
+    const visitLine = traversalType === 'BFS' ? 4 : 10
     snapshots.push({
       nodes: nodesCopy,
       edges: edgesCopy,
       traversalOrder: order.slice(0, i + 1).map(b => nodes[b.nodeId].label),
+      currentLine: visitLine,
     })
   }
 
@@ -185,7 +189,7 @@ function computeBFS(
     }
   }
 
-  return buildTraversalSnapshots(nodes, edges, order, treeEdgeIds)
+  return buildTraversalSnapshots(nodes, edges, order, treeEdgeIds, 'BFS')
 }
 
 function computeDFS(
@@ -210,7 +214,7 @@ function computeDFS(
   }
 
   dfs(startId)
-  return buildTraversalSnapshots(nodes, edges, order, treeEdgeIds)
+  return buildTraversalSnapshots(nodes, edges, order, treeEdgeIds, 'DFS')
 }
 
 const INITIAL = buildDefaultGraph()
@@ -272,6 +276,7 @@ function scheduleSnapshots(snapshots: Snap[], delay: number) {
         nodes: snap.nodes,
         edges: snap.edges,
         traversalOrder: snap.traversalOrder,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         statusText: isLast ? `Done — ${snap.traversalOrder.length} nodes visited` : text,
         steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
@@ -426,6 +431,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       nodes: snap.nodes,
       edges: snap.edges,
       traversalOrder: snap.traversalOrder,
+      currentLine: snap.currentLine ?? 0,
       statusText: text,
       steps: [...prev.steps, { time: nowTime(), text }],
     }))

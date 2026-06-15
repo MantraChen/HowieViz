@@ -33,6 +33,7 @@ export interface FWSnap {
   j: number
   nodeCount: number
   done: boolean
+  currentLine?: number
 }
 
 type Step = { time: string; text: string }
@@ -143,7 +144,7 @@ function computeFloydWarshall(
     cellHL: Array.from({ length: N }, (_, i) =>
       Array.from({ length: N }, (__, j) => (i === j ? 'diagonal' : 'default') as FWCellHL),
     ),
-    k: -1, i: -1, j: -1, nodeCount: N, done: false,
+    k: -1, i: -1, j: -1, nodeCount: N, done: false, currentLine: 2,
   })
 
   for (let k = 0; k < N; k++) {
@@ -157,7 +158,7 @@ function computeFloydWarshall(
           edges: { ...edges },
           dist: cloneDist(),
           cellHL: makeHL(k, i, j, false),
-          k, i, j, nodeCount: N, done: false,
+          k, i, j, nodeCount: N, done: false, currentLine: 6,
         })
 
         const newDist = dist[i][k] === Infinity || dist[k][j] === Infinity
@@ -172,7 +173,7 @@ function computeFloydWarshall(
             edges: { ...edges },
             dist: cloneDist(),
             cellHL: makeHL(k, i, j, true),
-            k, i, j, nodeCount: N, done: false,
+            k, i, j, nodeCount: N, done: false, currentLine: 9,
           })
         }
       }
@@ -187,7 +188,7 @@ function computeFloydWarshall(
     cellHL: Array.from({ length: N }, (_, i) =>
       Array.from({ length: N }, (__, j) => (i === j ? 'diagonal' : 'default') as FWCellHL),
     ),
-    k: N - 1, i: -1, j: -1, nodeCount: N, done: true,
+    k: N - 1, i: -1, j: -1, nodeCount: N, done: true, currentLine: 11,
   })
 
   return snaps
@@ -246,6 +247,7 @@ function scheduleSnaps(snaps: FWSnap[], delay: number) {
         i: snap.i,
         j: snap.j,
         done: snap.done,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         statusText: isLast ? 'All-pairs shortest paths complete' : text,
         steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
@@ -372,6 +374,7 @@ export const useFloydWarshallStore = create<FloydWarshallStore>((set, get) => ({
       j: snap.j,
       nodeCount: snap.nodeCount,
       done: snap.done,
+      currentLine: snap.currentLine ?? 0,
       statusText: text,
       steps: [...prev.steps, { time: nowTime(), text }],
     }))

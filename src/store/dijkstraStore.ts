@@ -27,6 +27,7 @@ interface DijkSnap {
   distances: Record<string, number>
   settled: string[]
   current: string | null
+  currentLine?: number
 }
 
 type Step = { time: string; text: string }
@@ -122,7 +123,8 @@ function computeDijkstra(
     }
   }
 
-  snaps.push(snap(startId, new Set()))
+  const initialSnap = snap(startId, new Set())
+  snaps.push({ ...initialSnap, currentLine: 2 })
 
   while (true) {
     let minId: string | null = null
@@ -142,7 +144,8 @@ function computeDijkstra(
         relaxed.add(eid)
       }
     }
-    snaps.push(snap(minId, relaxed))
+    const settleSnap = snap(minId, relaxed)
+    snaps.push({ ...settleSnap, currentLine: relaxed.size > 0 ? 9 : 5 })
   }
 
   // Final snap: all settled
@@ -156,6 +159,7 @@ function computeDijkstra(
     distances: dists,
     settled: settledOrder.map(id => nodes[id].label),
     current: null,
+    currentLine: 11,
   })
 
   return snaps
@@ -204,6 +208,7 @@ function scheduleSnaps(snaps: DijkSnap[], delay: number) {
         distances: snap.distances,
         settled: snap.settled,
         currentNode: snap.current,
+        currentLine: snap.currentLine ?? 0,
         isAnimating: !isLast,
         statusText: isLast ? `Done — settled ${snap.settled.length} nodes` : text,
         steps: isLast ? prev.steps : [...prev.steps, { time: nowTime(), text }],
@@ -294,6 +299,7 @@ export const useDijkstraStore = create<DijkstraStore>((set, get) => ({
       distances: snap.distances,
       settled: snap.settled,
       currentNode: snap.current,
+      currentLine: snap.currentLine ?? 0,
       statusText: text,
       steps: [...prev.steps, { time: nowTime(), text }],
     }))
