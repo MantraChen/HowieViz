@@ -4,6 +4,8 @@ import { BinarySearchVisualizer } from '@/visualizers/BinarySearchVisualizer'
 import { BinarySearchControls } from '@/components/BinarySearchControls'
 import { useBinarySearchStore } from '@/store/binarySearchStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { BINARY_SEARCH_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -77,7 +79,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: false },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -117,7 +119,9 @@ export function BinarySearchPage() {
   const store = useBinarySearchStore()
   const isAnimating = (store as any).isAnimating ?? false
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={BINARY_SEARCH_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <BinarySearchControls />
       <div className="border-t border-[#2a1f3d]" />

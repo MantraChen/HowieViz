@@ -4,6 +4,8 @@ import { QueueVisualizer } from '@/visualizers/QueueVisualizer'
 import { QueueControls } from '@/components/QueueControls'
 import { useQueueStore } from '@/store/queueStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { QUEUE_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -140,7 +142,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',   label: 'Manual',    available: false },
-  { key: 'quiz',     label: 'Quiz',      available: false },
+  { key: 'quiz',     label: 'Quiz',      available: true },
   { key: 'compare',  label: 'Compare',   available: false },
   { key: 'embed',    label: 'Embed',     available: false },
 ]
@@ -180,7 +182,9 @@ export function QueuePage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const statusText = useQueueStore(s => s.statusText)
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={QUEUE_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <QueueControls mode={activeMode} />
       <div className="border-t border-[#2a1f3d]" />

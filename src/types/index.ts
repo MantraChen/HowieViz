@@ -20,3 +20,14 @@ export interface VisualizerControls {
   speed: AnimationSpeed
   step: number
 }
+
+export interface QuizQuestion {
+  id: string
+  type: 'multiple_choice' | 'true_false' | 'fill_in'
+  question: string
+  options?: string[]
+  correct: string
+  explanation: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  relatedLine?: number
+}

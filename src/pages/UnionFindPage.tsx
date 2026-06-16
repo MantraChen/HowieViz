@@ -3,6 +3,8 @@ import { ChevronDown, PanelRight, X } from 'lucide-react'
 import { UnionFindVisualizer } from '@/visualizers/UnionFindVisualizer'
 import { UnionFindControls } from '@/components/UnionFindControls'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { UNION_FIND_QUIZ } from '@/data/quizQuestions'
 import { useUFStore } from '@/store/unionFindStore'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
@@ -79,7 +81,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: false },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -117,7 +119,9 @@ export function UnionFindPage() {
   const [activeMode, setActiveMode] = useState<ModeKey>('visualize')
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={UNION_FIND_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <UnionFindControls />
       <div className="border-t border-[#2a1f3d]" />

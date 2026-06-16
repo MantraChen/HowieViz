@@ -4,6 +4,8 @@ import { KnapsackVisualizer } from '@/visualizers/KnapsackVisualizer'
 import { KnapsackControls } from '@/components/KnapsackControls'
 import { useKnapsackStore } from '@/store/knapsackStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { KNAPSACK_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -225,7 +227,7 @@ function CollapsibleSection({
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual', label: 'Manual', available: true },
-  { key: 'quiz', label: 'Quiz', available: false },
+  { key: 'quiz', label: 'Quiz', available: true },
   { key: 'compare', label: 'Compare', available: false },
   { key: 'embed', label: 'Embed', available: false },
 ]
@@ -274,7 +276,9 @@ export function KnapsackPage() {
   const snapIndex = useKnapsackStore(s => s.snapIndex)
   const snapsLength = useKnapsackStore(s => s.snaps.length)
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={KNAPSACK_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       {/* Controls — always visible, no collapse header */}
       <KnapsackControls mode={activeMode} />

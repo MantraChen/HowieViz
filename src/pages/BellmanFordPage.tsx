@@ -4,6 +4,8 @@ import { BellmanFordVisualizer } from '@/visualizers/BellmanFordVisualizer'
 import { BellmanFordControls } from '@/components/BellmanFordControls'
 import { useBellmanFordStore } from '@/store/bellmanFordStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { BELLMAN_FORD_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -106,7 +108,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: false },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -150,7 +152,9 @@ export function BellmanFordPage() {
   const steps: { time: string; text: string }[] = (store as any).steps ?? []
   const clearSteps: () => void = (store as any).clearSteps ?? (() => {})
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={BELLMAN_FORD_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <BellmanFordControls />
       <div className="border-t border-[#2a1f3d]" />

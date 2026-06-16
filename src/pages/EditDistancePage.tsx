@@ -3,6 +3,8 @@ import { ChevronDown, PanelRight, X } from 'lucide-react'
 import { EditDistanceVisualizer } from '@/visualizers/EditDistanceVisualizer'
 import { EditDistanceControls } from '@/components/EditDistanceControls'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { EDIT_DISTANCE_QUIZ } from '@/data/quizQuestions'
 import { useEditDistanceStore } from '@/store/editDistanceStore'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
@@ -80,7 +82,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: false },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -118,7 +120,9 @@ export function EditDistancePage() {
   const [activeMode, setActiveMode] = useState<ModeKey>('visualize')
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={EDIT_DISTANCE_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <EditDistanceControls />
       <div className="border-t border-[#2a1f3d]" />

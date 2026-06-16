@@ -4,6 +4,8 @@ import { SortVisualizer } from '@/visualizers/SortVisualizer'
 import { SortControls } from '@/components/SortControls'
 import { useBubbleSortStore } from '@/store/bubbleSortStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { BUBBLE_SORT_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -134,7 +136,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: true },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -178,7 +180,9 @@ export function BubbleSortPage() {
   const snapIndex = store.snapIndex
   const snapsLength = store.snaps?.length ?? 0
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={BUBBLE_SORT_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <SortControls
         mode={activeMode}

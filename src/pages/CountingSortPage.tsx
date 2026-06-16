@@ -4,6 +4,8 @@ import { CountingSortVisualizer } from '@/visualizers/CountingSortVisualizer'
 import { CountingSortControls } from '@/components/CountingSortControls'
 import { useCountingSortStore } from '@/store/countingSortStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { COUNTING_SORT_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -104,7 +106,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: true },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -148,7 +150,9 @@ export function CountingSortPage() {
   const snapIndex = store.snapIndex
   const snapsLength = store.snaps.length
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={COUNTING_SORT_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <CountingSortControls mode={activeMode} />
       <div className="border-t border-[#2a1f3d]" />

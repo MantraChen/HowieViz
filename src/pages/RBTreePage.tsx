@@ -4,6 +4,8 @@ import { RBTreeVisualizer } from '@/visualizers/RBTreeVisualizer'
 import { RBTreeControls } from '@/components/RBTreeControls'
 import { useRBTreeStore } from '@/store/rbTreeStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { RB_TREE_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -107,7 +109,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',    label: 'Manual',    available: false },
-  { key: 'quiz',      label: 'Quiz',      available: false },
+  { key: 'quiz',      label: 'Quiz',      available: true },
   { key: 'compare',   label: 'Compare',   available: false },
   { key: 'embed',     label: 'Embed',     available: false },
 ]
@@ -151,7 +153,9 @@ export function RBTreePage() {
   const steps: { time: string; text: string }[] = (store as any).steps ?? []
   const clearSteps: () => void = (store as any).clearSteps ?? (() => {})
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={RB_TREE_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <RBTreeControls mode={activeMode} />
       <div className="border-t border-[#2a1f3d]" />

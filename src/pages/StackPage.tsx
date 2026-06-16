@@ -4,6 +4,8 @@ import { StackVisualizer } from '@/visualizers/StackVisualizer'
 import { StackControls } from '@/components/StackControls'
 import { useStackStore } from '@/store/stackStore'
 import { cn } from '@/lib/utils'
+import { QuizPanel } from '@/components/QuizPanel'
+import { STACK_QUIZ } from '@/data/quizQuestions'
 
 type ModeKey = 'visualize' | 'manual' | 'quiz' | 'compare' | 'embed'
 
@@ -142,7 +144,7 @@ function CollapsibleSection({ title, open, onToggle, children }: { title: string
 const MODES: { key: ModeKey; label: string; available: boolean }[] = [
   { key: 'visualize', label: 'Visualize', available: true },
   { key: 'manual',   label: 'Manual',    available: false },
-  { key: 'quiz',     label: 'Quiz',      available: false },
+  { key: 'quiz',     label: 'Quiz',      available: true },
   { key: 'compare',  label: 'Compare',   available: false },
   { key: 'embed',    label: 'Embed',     available: false },
 ]
@@ -182,7 +184,9 @@ export function StackPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const statusText = useStackStore(s => s.statusText)
 
-  const rightPanelContent = (
+  const rightPanelContent = activeMode === 'quiz' ? (
+    <QuizPanel questions={STACK_QUIZ} onComplete={() => setActiveMode('visualize')} />
+  ) : (
     <div className="space-y-4 p-4">
       <StackControls mode={activeMode} />
       <div className="border-t border-[#2a1f3d]" />
